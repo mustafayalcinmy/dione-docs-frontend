@@ -1,0 +1,626 @@
+<div class="w-screeen px-24 py-12 text-gruvbox-bg">
+    <div class="border-b-2 border-gruvbox-bg text-4xl p-6 flex justify-between items-center">
+        <div class="flex flex-row items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="size-20">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            <span class="pl-4">
+                Create New Document
+            </span>
+        </div>
+        <form class="w-2/5 class flex border-2 border-gruvbox-bg rounded-lg bg-white items-center gap-4 px-4">
+            <svg class="w-8 h-8" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+            </svg>
+            <input type="search" id="default-search"
+                class="block w-full p-6 ps-10 text-sm outline-none ring-0 text-gray-900 px-8 border-l-2 border-gruvbox-bg"
+                placeholder="Search for document..." required />
+            <button type="submit" class="font-medium text-base">Search</button>
+        </form>
+
+    </div>
+</div>
+
+
+<div class="text-gruvbox-bg flex justify-center">
+    <div class="w-fit h-full grid grid-cols-4 gap-12 bg-white border-2 border-gruvbox-bg p-20 rounded-xl">
+        <span class="col-span-4 text-2xl border-b-2 border-gruvbox-bg">Recent Documents</span>
+        <div class="w-52 h-72 bg-white border-2 border-gruvbox-bg flex items-center justify-center hover:cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
+            document
+        </div>
+        <div class="w-52 h-72 bg-white border-2 border-gruvbox-bg flex items-center justify-center hover:cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
+            document
+        </div>
+        <div class="w-52 h-72 bg-white border-2 border-gruvbox-bg flex items-center justify-center hover:cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
+            document
+        </div>
+        <div class="w-52 h-72 bg-white border-2 border-gruvbox-bg flex items-center justify-center hover:cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
+            document
+        </div>
+    </div>
+</div>
+
+
+<div class="my-12 w-full h-fit text-gruvbox-bg flex justify-center py-12">
+    <div class="overflow-x-auto w-3/5 border-2 border-gruvbox-bg h-96 bg-white rounded-xl">
+        <table class="table-auto border-collapse border border-gray-400 bg-white text-left w-full">
+            <thead class="h-8">
+                <tr>
+                    <th class="border border-gray-400 px-4 py-2">Name</th>
+                    <th class="border border-gray-400 px-4 py-2">Name</th>
+                    <th class="border border-gray-400 px-4 py-2">Last Update</th>
+                    <th class="border border-gray-400 px-4 py-2">Created At</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+                <tr class="max-h-8">
+                    <td>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="red" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-6 h-6 mx-auto">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                    </td>
+                    <td>Sample Name</td>
+                    <td>2024-12-25</td>
+                    <td>2024-01-01</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
