@@ -1,0 +1,113 @@
+
+
+.header {
+    width: 100%;
+    padding: 12px;
+    text-align: center;
+    background-color:#f5f5f5; /* Tailwind color */
+    border-bottom: 2px solid #282828; /* gruvbox-bg */
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px;
+    font-size: 24px;
+    width: 65%;
+    margin: 0 auto;
+}
+
+.add-button {
+    display: flex;
+    align-items: center;
+}
+
+.add-circle {
+    width: 50px;
+    height: 50px;
+    font-size: 50px;
+}
+
+.search-doc {
+    display: flex;
+    align-items: center;
+    width: 40%;
+    border: 2px solid #282828; /* gruvbox-bg */
+    border-radius: 8px;
+    background-color: #fff;
+    padding: 4px;
+}
+
+.search-doc input {
+    width: 100%;
+    padding: 6px;
+    padding-right: 5%;
+    font-size: 1rem;
+    border: none;
+    outline: none;
+    color: #282828; /* gruvbox-bg */
+}
+
+.search-doc button {
+    margin-right: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.recent-docs {
+    justify-self: center;
+    background-color: #f5f5f5;
+    color: #282828; /* gruvbox-bg */
+    margin: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+}
+
+.recent-docs-header {
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.docs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.recent-docs .doc {
+    width: 208px;
+    height: 288px;
+    background-color: #fff;
+    border: 2px solid #282828;
+    margin: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+    text-align: center;
+    border-radius: 8px; /* Hafif köşe yuvarlama */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Hafif gölge efekti */
+}
+
+.recent-docs .doc:hover {
+    transform: scale(1.05); /* Hover efekti */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); /* Hover'da gölge efekti artırılır */
+}
+
+.table-container {
+  margin: 20px;
+  width: 65%; /* Sayfa ortasında olmasını sağlamak için */
+  display: flex;
+  margin: 0 auto;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center; /* İçeriği ortalamak için */
+}
+
+mat-paginator {
+    width: 100%;
+}
