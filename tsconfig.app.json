@@ -4,7 +4,11 @@
   "compilerOptions": {
     "outDir": "./out-tsc/app",
     "types": [
-      "node"
+      "jasmine", "node"
+    ],
+    "typeRoots": [
+      "node_modules/@types",
+      "src/types" // Add your custom types directory
     ]
   },
   "files": [
@@ -13,6 +17,7 @@
     "server.ts"
   ],
   "include": [
-    "src/**/*.d.ts"
-  ]
+    "src/**/*.ts",
+    "src/types/**/*.d.ts" // Explicitly include .d.ts files
+   ]
 }

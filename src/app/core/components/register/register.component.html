@@ -1,0 +1,50 @@
+<nav class="navbar">
+    <div class="logo highlight" (click)="goToWelcome()">DioneDocs</div>
+    <div class="nav-links">
+        <button class="btn primary" (click)="goToLogin()">Login</button>
+    </div>
+</nav>
+<div class="container">
+    <div class="main-container">
+        <header>
+            <h1><span class="highlight">Register</span> for DioneDocs</h1>
+            <p class="subtitle">Create your account to get started.</p>
+        </header>
+        
+        <div class="register-form">
+            <div class="form-group">
+                <label for="fullname">Full Name</label>
+                <input type="text" id="fullname" [(ngModel)]="user_register.username" placeholder="Enter your full name">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" [(ngModel)]="user_register.email" placeholder="Enter your email">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" [(ngModel)]="user_register.password" placeholder="Create a password">
+                <small class="password-hint">Password must be at least 8 characters long and include numbers and special characters.</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" [(ngModel)]="confirmPassword" placeholder="Confirm your password">
+            </div>
+            
+            <div class="terms-checkbox">
+                <input type="checkbox" id="terms" [(ngModel)]="acceptTerms">
+                <label for="terms">I agree to the <a href="#" class="terms-link">Terms and Conditions</a></label>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn primary full-width" [disabled]="!isFormValid()" (click)="register()">Create Account</button>
+            </div>
+            
+            <div class="login-link">
+                Already have an account? <a (click)="goToLogin()" class="highlight">Login here</a>
+            </div>
+        </div>
+    </div>
+</div>

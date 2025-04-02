@@ -1,14 +1,13 @@
 <div class="header">
     <div class="header-container">
             <button class="add-button">
-                <mat-icon class="add-circle">add_circle_outline</mat-icon>
+                <mat-icon class="add-circle" (click)="new_document()">add_circle_outline</mat-icon>
             </button>
-        <form class="search-doc">
-            <input type="search" placeholder="Search for document..." required>
-            <button type="submit">
-                <mat-icon>search</mat-icon>
+        <div class="search-doc"> <input type="search"
+                   placeholder="Search for document..."
+                   (keyup)="applyFilter($event)"  #searchInput> <button type="button"> <mat-icon>search</mat-icon>
             </button>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -17,42 +16,44 @@
         <span>Recent Documents</span>
     </div>
     <div class="docs">
-        <div class="doc">document</div>
-        <div class="doc">document</div>
-        <div class="doc">document</div>
-        <div class="doc">document</div>
+        <div class="doc"
+             *ngFor="let doc of recentDocuments"
+             (click)="openDocument(doc)"
+             matRipple> <span class="doc-name">{{ doc.name }}</span>
+
+        </div>
+        <div *ngIf="recentDocuments.length === 0" class="no-recent-docs">
+            No recently updated documents found.
+        </div>
     </div>
 </div>
 
 <div class="table-container">
-    <table mat-table [dataSource]="dataSource">
-        <ng-container matColumnDef="favorite">
-        <th mat-header-cell *matHeaderCellDef> Favorite </th>
-        <td mat-cell *matCellDef="let element">
+    <table mat-table [dataSource]="dataSource" matSort> <ng-container matColumnDef="favorite">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header> Favorite </th> <td mat-cell *matCellDef="let element">
             <mat-icon [style.color]="element.favorite ? 'red' : 'grey'">
             {{ element.favorite ? 'favorite' : 'favorite_border' }}
             </mat-icon>
         </td>
         </ng-container>
-    
+
         <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef> Name </th>
-        <td mat-cell *matCellDef="let element"> {{ element.name }} </td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header> Name </th> <td mat-cell *matCellDef="let element"> {{ element.name }} </td>
         </ng-container>
-    
+
         <ng-container matColumnDef="lastUpdate">
-        <th mat-header-cell *matHeaderCellDef> Last Update </th>
-        <td mat-cell *matCellDef="let element"> {{ element.lastUpdate }} </td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header> Last Update </th> <td mat-cell *matCellDef="let element"> {{ element.lastUpdate }} </td>
         </ng-container>
-    
+
         <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef> Created At </th>
-        <td mat-cell *matCellDef="let element"> {{ element.createdAt }} </td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header> Created At </th> <td mat-cell *matCellDef="let element"> {{ element.createdAt }} </td>
         </ng-container>
-    
+
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="4">No data matching the filter "{{searchInput.value}}"</td> </tr>
     </table>
-    <mat-paginator [length]="dataSource.data.length" [pageSize]="5" (page)="pageEvent($event)">
-    </mat-paginator>
+    <mat-paginator [length]="dataSource.data.length" [pageSize]="5" [pageSizeOptions]="[5, 10, 25, 100]"> </mat-paginator>
 </div>
