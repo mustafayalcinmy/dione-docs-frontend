@@ -1,0 +1,490 @@
+<div class="document-page-container">
+    <mat-toolbar class="document-toolbar" [class.shadow]="scrollPosition > 10">
+      <div class="toolbar-left">
+        <button mat-icon-button aria-label="Geri Dön" routerLink="/documents" matTooltip="Dokümanlar Sayfasına Dön">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        
+        <mat-form-field class="document-name-field" appearance="outline">
+          <input matInput [(ngModel)]="documentMeta.name" (ngModelChange)="onMetaChange()" 
+                 placeholder="Doküman Adı" [disabled]="isLoading">
+        </mat-form-field>
+        
+        <div class="save-status">
+          <span *ngIf="isSaving" class="saving-badge">
+            <mat-spinner diameter="16"></mat-spinner>
+            Kaydediliyor...
+          </span>
+          <span *ngIf="!isSaving && isSaved" class="saved-badge">
+            <mat-icon>check_circle</mat-icon>
+            Kaydedildi
+          </span>
+          <span *ngIf="!isSaving && !isSaved" class="unsaved-badge">
+            <mat-icon>pending</mat-icon>
+            Kaydedilmemiş değişiklikler
+          </span>
+        </div>
+      </div>
+      
+      <div class="toolbar-center">
+        <div class="document-stats">
+          <span matTooltip="Kelime sayısı">
+            <mat-icon>text_fields</mat-icon> {{ stats.words }} kelime
+          </span>
+          <span matTooltip="Karakter sayısı">
+            <mat-icon>abc</mat-icon> {{ stats.chars }} karakter
+          </span>
+          <span matTooltip="Tahmini sayfa sayısı">
+            <mat-icon>description</mat-icon> {{ stats.pages }} sayfa
+          </span>
+        </div>
+      </div>
+      
+      <div class="toolbar-right">
+        <button mat-flat-button color="primary" (click)="saveDocument()" 
+               [disabled]="isSaving || isLoading || isSaved" matTooltip="Kaydet (Ctrl+S)">
+          <mat-icon>save</mat-icon>
+          Kaydet
+        </button>
+        
+        <button mat-icon-button [matMenuTriggerFor]="fileMenu" matTooltip="Dosya İşlemleri">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        
+        <mat-menu #fileMenu="matMenu">
+          <button mat-menu-item (click)="createNewVersion()">
+            <mat-icon>save_as</mat-icon>
+            <span>Yeni Sürüm Oluştur</span>
+          </button>
+          <button mat-menu-item [printSectionId]="'printable-area'" ngxPrint>
+            <mat-icon>print</mat-icon>
+            <span>Yazdır</span>
+          </button>
+          <button mat-menu-item (click)="exportAsPdf()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span>PDF Olarak İndir</span>
+          </button>
+          <button mat-menu-item (click)="exportAsDocx()">
+            <mat-icon>description</mat-icon>
+            <span>Word Olarak İndir</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="showVersionHistory()">
+            <mat-icon>history</mat-icon>
+            <span>Sürüm Geçmişi</span>
+          </button>
+          <button mat-menu-item (click)="showShareOptions()">
+            <mat-icon>share</mat-icon>
+            <span>Paylaş</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="deleteDocument()" color="warn">
+            <mat-icon color="warn">delete</mat-icon>
+            <span>Dokümanı Sil</span>
+          </button>
+        </mat-menu>
+        
+        <button mat-icon-button matTooltip="Profil" [matMenuTriggerFor]="userMenu">
+          <div class="user-avatar">
+            {{ userInitials }}
+          </div>
+        </button>
+        
+        <mat-menu #userMenu="matMenu">
+          <div class="user-info-header">
+            <strong>{{ userName }}</strong>
+            <small>{{ userEmail }}</small>
+          </div>
+          <mat-divider></mat-divider>
+          <button mat-menu-item routerLink="/profile">
+            <mat-icon>person</mat-icon>
+            <span>Profil</span>
+          </button>
+          <button mat-menu-item routerLink="/settings">
+            <mat-icon>settings</mat-icon>
+            <span>Ayarlar</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>exit_to_app</mat-icon>
+            <span>Çıkış Yap</span>
+          </button>
+        </mat-menu>
+      </div>
+    </mat-toolbar>
+    
+    <mat-toolbar class="format-toolbar" [class.shadow]="scrollPosition > 10">
+      <div class="format-section">
+        <mat-form-field appearance="outline" class="compact-form-field">
+          <mat-select [(ngModel)]="editorFormats.font" (selectionChange)="applyFormat('font', $event.value)">
+            <mat-option *ngFor="let font of availableFonts" [value]="font.value">
+              <span [style.fontFamily]="font.value">{{ font.label }}</span>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="compact-form-field size-field">
+          <mat-select [(ngModel)]="editorFormats.size" (selectionChange)="applyFormat('size', $event.value)">
+            <mat-option *ngFor="let size of availableSizes" [value]="size.value">
+              {{ size.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      
+      <div class="format-section format-buttons">
+        <button mat-icon-button (click)="applyFormat('bold')" 
+                [class.active-format]="editorFormats.bold" matTooltip="Kalın (Ctrl+B)">
+          <mat-icon>format_bold</mat-icon>
+        </button>
+        <button mat-icon-button (click)="applyFormat('italic')" 
+                [class.active-format]="editorFormats.italic" matTooltip="İtalik (Ctrl+I)">
+          <mat-icon>format_italic</mat-icon>
+        </button>
+        <button mat-icon-button (click)="applyFormat('underline')" 
+                [class.active-format]="editorFormats.underline" matTooltip="Altı Çizili (Ctrl+U)">
+          <mat-icon>format_underlined</mat-icon>
+        </button>
+        <button mat-icon-button (click)="applyFormat('strike')" 
+                [class.active-format]="editorFormats.strike" matTooltip="Üstü Çizili">
+          <mat-icon>format_strikethrough</mat-icon>
+        </button>
+        
+        <mat-divider [vertical]="true"></mat-divider>
+        
+        <div class="color-picker-wrapper">
+          <button mat-icon-button [matMenuTriggerFor]="colorMenu" matTooltip="Metin Rengi">
+            <mat-icon [style.color]="editorFormats.color || '#000000'">format_color_text</mat-icon>
+          </button>
+          <mat-menu #colorMenu="matMenu" class="color-picker-menu">
+            <div class="color-picker-content" (click)="$event.stopPropagation()">
+              <div class="color-palette">
+                <button *ngFor="let color of textColors" mat-mini-fab 
+                        [style.backgroundColor]="color"
+                        (click)="applyFormat('color', color)"
+                        [class.selected]="editorFormats.color === color">
+                </button>
+              </div>
+              <div class="custom-color-input">
+                <input [(colorPicker)]="customColor" 
+                       [style.background]="customColor"
+                       [cpOutputFormat]="'hex'"
+                       [cpPosition]="'bottom'"
+                       (colorPickerChange)="applyFormat('color', $event)"
+                       placeholder="#HEX">
+              </div>
+            </div>
+          </mat-menu>
+        </div>
+        
+        <div class="color-picker-wrapper">
+          <button mat-icon-button [matMenuTriggerFor]="bgColorMenu" matTooltip="Vurgu Rengi">
+             <mat-icon>format_color_fill</mat-icon>
+             <span class="color-preview" [style.backgroundColor]="editorFormats.background || 'transparent'"></span>
+          </button>
+          <mat-menu #bgColorMenu="matMenu" class="color-picker-menu">
+            <div class="color-picker-content" (click)="$event.stopPropagation()">
+              <div class="color-palette">
+                <button *ngFor="let color of bgColors" mat-mini-fab 
+                        [style.backgroundColor]="color"
+                        (click)="applyFormat('background', color)"
+                        [class.selected]="editorFormats.background === color">
+                </button>
+                 <button mat-mini-fab [style.backgroundColor]="'transparent'" (click)="applyFormat('background', false)" matTooltip="Vurguyu Kaldır">
+                   <mat-icon>format_clear</mat-icon>
+                 </button>
+              </div>
+               </div>
+          </mat-menu>
+        </div>
+        
+        <mat-divider [vertical]="true"></mat-divider>
+      </div>
+      
+      <div class="format-section alignment-buttons">
+        <button mat-icon-button (click)="applyFormat('align', false)" 
+                [class.active-format]="!editorFormats.align || editorFormats.align === 'left'" matTooltip="Sola Hizala">
+          <mat-icon>format_align_left</mat-icon>
+        </button>
+        <button mat-icon-button (click)="applyFormat('align', 'center')" 
+                [class.active-format]="editorFormats.align === 'center'" matTooltip="Ortala">
+          <mat-icon>format_align_center</mat-icon>
+        </button>
+        <button mat-icon-button (click)="applyFormat('align', 'right')" 
+                [class.active-format]="editorFormats.align === 'right'" matTooltip="Sağa Hizala">
+          <mat-icon>format_align_right</mat-icon>
+        </button>
+        <button mat-icon-button (click)="applyFormat('align', 'justify')" 
+                [class.active-format]="editorFormats.align === 'justify'" matTooltip="İki Yana Yasla">
+          <mat-icon>format_align_justify</mat-icon>
+        </button>
+      </div>
+      
+      <div class="format-section list-buttons">
+        <button mat-icon-button (click)="applyFormat('list', 'bullet')" 
+                [class.active-format]="editorFormats.list === 'bullet'" matTooltip="Madde İşaretleri">
+          <mat-icon>format_list_bulleted</mat-icon>
+        </button>
+        <button mat-icon-button (click)="applyFormat('list', 'ordered')" 
+                [class.active-format]="editorFormats.list === 'ordered'" matTooltip="Numaralı Liste">
+          <mat-icon>format_list_numbered</mat-icon>
+        </button>
+        <button mat-icon-button (click)="applyFormat('indent', '-1')" matTooltip="Girintiyi Azalt">
+          <mat-icon>format_indent_decrease</mat-icon>
+        </button>
+        <button mat-icon-button (click)="applyFormat('indent', '+1')" matTooltip="Girintiyi Artır">
+          <mat-icon>format_indent_increase</mat-icon>
+        </button>
+      </div>
+      
+      <div class="format-section advanced-buttons">
+        <button mat-icon-button (click)="insertTable()" matTooltip="Tablo Ekle">
+          <mat-icon>table_chart</mat-icon>
+        </button>
+        <button mat-icon-button (click)="insertLink()" matTooltip="Bağlantı Ekle">
+          <mat-icon>link</mat-icon>
+        </button>
+        <button mat-icon-button (click)="insertImage()" matTooltip="Resim Ekle">
+          <mat-icon>image</mat-icon>
+        </button>
+        <button mat-icon-button [matMenuTriggerFor]="insertMenu" matTooltip="Ekle">
+          <mat-icon>add_box</mat-icon>
+        </button>
+        
+        <mat-menu #insertMenu="matMenu">
+          <button mat-menu-item (click)="insertFormula()">
+            <mat-icon>functions</mat-icon>
+            <span>Matematik Formülü</span>
+          </button>
+          <button mat-menu-item (click)="insertChart()">
+            <mat-icon>insert_chart</mat-icon>
+            <span>Grafik</span>
+          </button>
+           <button mat-menu-item (click)="applyFormat('code-block')"> <mat-icon>code</mat-icon>
+            <span>Kod Bloğu</span>
+          </button>
+          <button mat-menu-item (click)="insertDatetime()">
+            <mat-icon>event</mat-icon>
+            <span>Tarih/Saat</span>
+          </button>
+          <button mat-menu-item (click)="insertHorizontalRule()">
+            <mat-icon>horizontal_rule</mat-icon>
+            <span>Yatay Çizgi</span>
+          </button>
+          <button mat-menu-item (click)="insertEmoji()">
+            <mat-icon>emoji_emotions</mat-icon>
+            <span>Emoji</span>
+          </button>
+        </mat-menu>
+      </div>
+      
+      <div class="format-section extra-actions">
+        <button mat-icon-button [matMenuTriggerFor]="formatMenu" matTooltip="Daha Fazla Format Seçeneği">
+          <mat-icon>more_horiz</mat-icon>
+        </button>
+        
+        <mat-menu #formatMenu="matMenu" class="format-menu">
+          <button mat-menu-item (click)="applyFormat('script', 'sub')" 
+                  [class.active-format]="editorFormats.script === 'sub'">
+            <mat-icon>subscript</mat-icon>
+            <span>Alt Simge</span>
+          </button>
+          <button mat-menu-item (click)="applyFormat('script', 'super')"
+                  [class.active-format]="editorFormats.script === 'super'">
+            <mat-icon>superscript</mat-icon>
+            <span>Üst Simge</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="applyFormat('header', 1)" [class.active-format]="editorFormats.header === 1">
+            <span class="format-heading">Başlık 1</span>
+          </button>
+          <button mat-menu-item (click)="applyFormat('header', 2)" [class.active-format]="editorFormats.header === 2">
+            <span class="format-heading-2">Başlık 2</span>
+          </button>
+          <button mat-menu-item (click)="applyFormat('header', 3)" [class.active-format]="editorFormats.header === 3">
+            <span class="format-heading-3">Başlık 3</span>
+          </button>
+          <button mat-menu-item (click)="applyFormat('header', false)">
+            <span>Normal Metin</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="applyFormat('blockquote')" [class.active-format]="editorFormats.blockquote">
+            <mat-icon>format_quote</mat-icon>
+            <span>Alıntı</span>
+          </button>
+          <button mat-menu-item (click)="applyFormat('code-block')" [class.active-format]="editorFormats['code-block']">
+            <mat-icon>code</mat-icon>
+            <span>Kod Bloğu</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="clearFormatting()">
+            <mat-icon>format_clear</mat-icon>
+            <span>Formatlamayı Temizle</span>
+          </button>
+        </mat-menu>
+      </div>
+    </mat-toolbar>
+    
+    <div class="editor-container" [class.loading]="isLoading">
+      <div class="loading-overlay" *ngIf="isLoading">
+        <mat-spinner [diameter]="50"></mat-spinner>
+        <p>Doküman Yükleniyor...</p>
+      </div>
+      
+      <div id="printable-area" class="editor-wrapper">
+        <quill-editor
+          [(ngModel)]="documentContent"
+          [modules]="quillModules"
+          [placeholder]="'Yazmaya başlayın...'"
+          [styles]="{ 'min-height': '70vh', 'height': 'auto', 'box-sizing': 'border-box', 'border': 'none' }"
+          format="object"  
+          (onContentChanged)="onContentChanged($event)"
+          (onSelectionChanged)="onSelectionChanged($event)"
+          (onEditorCreated)="onEditorCreated($event)"
+          #editor>
+        </quill-editor>
+      </div>
+      
+      <div class="side-panel" *ngIf="showSidePanel">
+        <div class="panel-header">
+          <h3>Doküman Özellikleri</h3>
+          <button mat-icon-button (click)="toggleSidePanel()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        
+        <mat-tab-group>
+          <mat-tab label="Yorumlar">
+            <div class="comment-section">
+              <div class="comments-list">
+                <div class="no-comments" *ngIf="comments.length === 0">
+                  <mat-icon>comment</mat-icon>
+                  <p>Henüz yorum yok</p>
+                </div>
+                
+                <div class="comment-item" *ngFor="let comment of comments">
+                  <div class="comment-header">
+                    <div class="comment-avatar">{{ comment.userInitials }}</div>
+                    <div class="comment-meta">
+                      <strong>{{ comment.userName }}</strong>
+                      <small>{{ comment.createdAt | date:'medium' }}</small>
+                    </div>
+                    <button mat-icon-button [matMenuTriggerFor]="commentMenu" *ngIf="comment.userId === currentUserId">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #commentMenu="matMenu">
+                      <button mat-menu-item (click)="editComment(comment)">
+                        <mat-icon>edit</mat-icon>
+                        <span>Düzenle</span>
+                      </button>
+                      <button mat-menu-item (click)="deleteComment(comment)">
+                        <mat-icon>delete</mat-icon>
+                        <span>Sil</span>
+                      </button>
+                    </mat-menu>
+                  </div>
+                  
+                  <div class="comment-content">
+                    {{ comment.text }}
+                  </div>
+                </div>
+              </div>
+              
+              <div class="add-comment">
+                <mat-form-field appearance="outline" class="full-width">
+                   <textarea matInput [(ngModel)]="newComment" placeholder="Yorum ekle..." rows="3"></textarea>
+                </mat-form-field>
+                <button mat-raised-button color="primary" (click)="addComment()" [disabled]="!newComment.trim()">
+                  Yorum Ekle
+                </button>
+              </div>
+            </div>
+          </mat-tab>
+          
+          <mat-tab label="Özellikler">
+            <div class="properties-section">
+              <h4>Doküman Bilgileri</h4>
+              <p><strong>Oluşturulma:</strong> {{ documentMeta.createdAt | date:'medium' }}</p>
+              <p><strong>Son Değişiklik:</strong> {{ documentMeta.lastModified | date:'medium' }}</p>
+              <p><strong>Boyut:</strong> {{ formatFileSize(documentMeta.size) }}</p>
+              
+              <h4>Etiketler</h4>
+              <mat-form-field appearance="outline" class="full-width">
+               <mat-label>Etiketler</mat-label>
+                <mat-chip-grid #chipGrid aria-label="Etiket girin">
+                  <mat-chip-row *ngFor="let tag of documentMeta.tags" 
+                             (removed)="removeTag(tag)"
+                             [removable]="true">
+                    {{tag}}
+                    <mat-icon matChipRemove>cancel</mat-icon>
+                  </mat-chip-row>
+                  <input placeholder="Etiket ekle..." 
+                         [matChipInputFor]="chipGrid"
+                         [matChipInputSeparatorKeyCodes]="[13, 188]" 
+                         (matChipInputTokenEnd)="addTag($event)"/>
+                </mat-chip-grid>
+              </mat-form-field>
+              
+              <h4>Paylaşım Ayarları</h4>
+              <mat-slide-toggle [(ngModel)]="documentMeta.isPublic" (change)="onMetaChange()">
+                Herkese Açık Link
+              </mat-slide-toggle>
+              
+              <div class="shared-users" *ngIf="!documentMeta.isPublic">
+                <h5>Paylaşılan Kullanıcılar</h5>
+                <div class="no-users" *ngIf="documentMeta.sharedWith.length === 0">
+                  <p>Henüz kimseyle paylaşılmadı</p>
+                </div>
+                
+                <mat-chip-grid *ngIf="documentMeta.sharedWith.length > 0">
+                  <mat-chip-row *ngFor="let user of documentMeta.sharedWith" (removed)="removeSharedUser(user)" [removable]="true">
+                    {{user}}
+                    <mat-icon matChipRemove>cancel</mat-icon>
+                  </mat-chip-row>
+                </mat-chip-grid>
+                
+                <mat-form-field appearance="outline" class="full-width">
+                 <mat-label>E-posta adresi ile paylaş</mat-label>
+                  <input matInput placeholder="ornek@example.com" [(ngModel)]="newSharedUser" (keydown.enter)="addSharedUser()">
+                  <button mat-icon-button matSuffix (click)="addSharedUser()" [disabled]="!newSharedUser" matTooltip="Kullanıcı Ekle">
+                    <mat-icon>person_add</mat-icon>
+                  </button>
+                </mat-form-field>
+              </div>
+            </div>
+          </mat-tab>
+          
+          <mat-tab label="Sürümler">
+            <div class="versions-section">
+              <div class="versions-header">
+                <h4>Sürüm Geçmişi</h4>
+                <button mat-stroked-button (click)="createNewVersion()">
+                  <mat-icon>save_as</mat-icon>
+                  Yeni Sürüm Oluştur
+                </button>
+              </div>
+              
+              <div class="versions-list">
+                <div class="no-versions" *ngIf="documentMeta.versions.length === 0">
+                  <mat-icon>history</mat-icon>
+                  <p>Henüz sürüm bulunmuyor</p>
+                </div>
+                
+                <mat-list *ngIf="documentMeta.versions.length > 0">
+                  <mat-list-item *ngFor="let version of documentMeta.versions; let i = index">
+                   <div matListItemTitle>{{ version.name || 'Sürüm ' + (documentMeta.versions.length - i) }}</div>
+                   <div matListItemLine>{{ version.createdAt | date:'medium' }}</div>
+                    <div class="version-actions"> <button mat-icon-button (click)="restoreVersion(version)" matTooltip="Bu sürüme geri dön">
+                        <mat-icon>restore</mat-icon>
+                      </button>
+                      </div>
+                  </mat-list-item>
+                   <mat-divider></mat-divider>
+                </mat-list>
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,419 @@
+@use '@angular/material' as mat;
+
+
+$primary-color: #6200ea; // Ana renk
+$accent-color: #03dac6; // Vurgu rengi
+
+// Temel Değişkenler
+$toolbar-height: 64px;
+$format-toolbar-height: 56px;
+$side-panel-width: 300px;
+$border-color: #e0e0e0;
+$editor-background: #ffffff;
+$page-background: #f5f5f5; // Editör dışı alan
+
+:host {
+  display: block;
+  height: 100%; // Component'in tamamını kaplaması için
+}
+
+.document-page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; // Tam ekran yüksekliği
+  overflow: hidden; // Ana container scroll olmasın
+}
+
+// --- Üst Araç Çubuğu ---
+.document-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  background-color: $editor-background; // Beyaz arka plan
+  border-bottom: 1px solid $border-color;
+  position: sticky; // Kaydırmayla sabit kalır
+  top: 0;
+  z-index: 1001; // Diğer toolbar'ın üzerinde
+  transition: box-shadow 0.3s ease;
+
+  &.shadow {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .toolbar-left, .toolbar-center, .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px; // Elemanlar arası boşluk
+  }
+
+  .toolbar-center {
+    flex-grow: 1; // Ortadaki alanı doldurur
+    justify-content: center; // Ortala
+  }
+
+  .document-name-field {
+    // Yüksekliği ve padding'i azaltmak için
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+     ::ng-deep .mat-mdc-text-field-wrapper {
+       height: 40px !important;
+       padding: 0 10px !important;
+     }
+     ::ng-deep .mat-mdc-floating-label {
+        top: 12px !important; // Label'ı biraz yukarı al
+     }
+     width: 250px; // Genişlik ayarı
+  }
+
+  .save-status {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+    mat-spinner {
+       margin-right: 5px;
+    }
+    
+    &.saved-badge { color: #4caf50; } // Yeşil
+    &.unsaved-badge { color: #ff9800; } // Turuncu
+  }
+
+  .document-stats {
+    display: flex;
+    gap: 15px;
+    font-size: 0.8rem;
+    color: #666;
+    span {
+       display: inline-flex;
+       align-items: center;
+       gap: 4px;
+    }
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: $accent-color;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+}
+
+// --- Format Araç Çubuğu ---
+.format-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  background-color: #fafafa; // Biraz daha açık gri
+  border-bottom: 1px solid $border-color;
+  min-height: $format-toolbar-height;
+  box-sizing: border-box;
+  overflow-x: auto; // Yatayda sığmazsa scroll
+  gap: 10px; // Bölümler arası boşluk
+  position: sticky; // Kaydırmayla sabit kalır
+  top: $toolbar-height; // Üst toolbar'ın altında
+  z-index: 1000;
+  transition: box-shadow 0.3s ease;
+
+  &.shadow {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .format-section {
+    display: flex;
+    align-items: center;
+    gap: 4px; // Düğmeler/alanlar arası boşluk
+
+    // Dikey ayırıcı
+    mat-divider[vertical] {
+       height: 24px;
+       margin: 0 5px;
+    }
+  }
+
+  .compact-form-field {
+    // Daha küçük select kutuları için
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+    ::ng-deep .mat-mdc-text-field-wrapper {
+       height: 36px !important;
+       padding: 0 8px 0 12px !important; // Sol padding daha fazla
+       background-color: $editor-background; // Beyaz arka plan
+       border-radius: 4px;
+    }
+     ::ng-deep .mat-mdc-floating-label { display: none; } // Label'ı gizle
+     ::ng-deep .mat-mdc-select-value { line-height: 36px; } // Değeri ortala
+     ::ng-deep .mat-mdc-select-arrow svg { top: 1px !important; } // Oku ortala
+
+     &.size-field {
+        width: 80px; // Boyut alanı genişliği
+     }
+     min-width: 120px; // Font alanı min genişlik
+  }
+
+  .format-buttons button, .alignment-buttons button, .list-buttons button, .advanced-buttons button, .extra-actions button {
+     &.active-format {
+        background-color: rgba($primary-color, 0.1);
+        color: $primary-color;
+     }
+  }
+
+  .color-picker-wrapper {
+    position: relative;
+    display: inline-block; // Menünün doğru konumlanması için
+
+     // Renk seçici menüsü içindeki renk kutucukları
+    .color-preview {
+      display: inline-block;
+      width: 16px;
+      height: 5px; // İkonun altına küçük bir çizgi gibi
+      border: 1px solid rgba(0,0,0,0.2);
+      position: absolute;
+      bottom: 6px; // Konumu ayarla
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  }
+}
+
+// Renk Seçici Menüsü için özel stil
+.color-picker-menu {
+  .mat-mdc-menu-content {
+    padding: 0 !important; // İç padding'i kaldır
+  }
+}
+.color-picker-content {
+  padding: 10px;
+  max-width: 220px; // Genişliği sınırla
+
+  .color-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+
+    button {
+       width: 24px !important;
+       height: 24px !important;
+       min-width: 24px !important;
+       border-radius: 50%;
+       box-shadow: none;
+       border: 1px solid rgba(0,0,0,0.2);
+       cursor: pointer;
+       transition: transform 0.1s ease;
+
+       &:hover {
+         transform: scale(1.1);
+       }
+       &.selected {
+         border: 2px solid $primary-color;
+         transform: scale(1.1);
+       }
+       mat-icon { // Şeffaf renk için ikon
+          font-size: 18px;
+          color: #666;
+       }
+    }
+  }
+  // Özel renk input'u gerekirse buraya
+}
+
+
+// --- Editör Alanı ---
+.editor-container {
+  flex-grow: 1; // Kalan alanı kapla
+  overflow-y: auto; // İçerik uzunsa scroll
+  padding: 20px; // Editörün etrafındaki boşluk
+  background-color: $page-background;
+  display: flex; // Ortalamak için
+  justify-content: center; // Yatayda ortala
+  position: relative; // Yükleme overlay için
+
+  &.loading {
+    // Yüklenirken içeriği gizle veya overlay göster
+  }
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100; // Editörün üzerinde
+    p { margin-top: 10px; color: #666; }
+}
+
+.editor-wrapper {
+  width: 8.5in; // A4/Letter genişliği
+  max-width: 100%;
+  min-height: 11in; // Sayfa yüksekliği (scroll için)
+  background-color: $editor-background;
+  padding: 1in; // Sayfa kenar boşlukları
+  box-sizing: border-box;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.15);
+  border: 1px solid #dcdcdc; // İnce çerçeve
+
+   // ngx-quill stilleri
+   ::ng-deep quill-editor {
+     // Quill container stilleri
+     .ql-container {
+        font-family: 'Arial', sans-serif; // Varsayılan font
+        font-size: 12pt; // Varsayılan boyut
+        border: none !important; // Wrapper'da border var
+     }
+     .ql-editor {
+        min-height: calc(11in - 2in); // İç padding çıkarılmış yükseklik
+        padding: 0 !important; // Wrapper'da padding var
+        line-height: 1.6;
+        color: #333;
+
+        // Başlıklar, listeler vb. için özel stiller
+        h1 { font-size: 2em; margin-bottom: 0.5em; padding-bottom: 0.1em; border-bottom: 1px solid #eee; }
+        h2 { font-size: 1.5em; margin-bottom: 0.4em; padding-bottom: 0.1em; border-bottom: 1px solid #eee; }
+        h3 { font-size: 1.2em; margin-bottom: 0.3em; }
+        blockquote { border-left: 4px solid #ccc; margin: 10px 0; padding-left: 16px; color: #666; }
+        pre.ql-syntax { background-color: #f5f5f5; color: #333; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', monospace; }
+        img { max-width: 100%; height: auto; vertical-align: middle; border-radius: 4px; }
+
+        // Tablo stilleri (quill-better-table)
+        table {
+          border-collapse: collapse;
+          width: 100%;
+          margin: 1em 0;
+          td, th {
+             border: 1px solid #ccc;
+             padding: 8px;
+             min-width: 50px;
+          }
+          th {
+             background-color: #f9f9f9;
+             font-weight: bold;
+          }
+        }
+     }
+     .ql-clipboard { // Yapıştırma alanı
+        position: absolute;
+        left: -10000px;
+        top: 50%;
+        height: 1px;
+        overflow-y: hidden;
+     }
+     .ql-tooltip { // Link tooltip vb.
+         z-index: 1002 !important; // Toolbar'ın üzerinde görünmesi için
+     }
+  }
+}
+
+
+// --- Yan Panel ---
+.side-panel {
+  width: $side-panel-width;
+  border-left: 1px solid $border-color;
+  background-color: $editor-background;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  box-sizing: border-box;
+  overflow-y: auto;
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    h3 { margin: 0; font-size: 1.1rem; }
+  }
+
+  mat-tab-group {
+    flex-grow: 1; // Kalan alanı kapla
+  }
+
+  // Yorumlar
+  .comment-section {
+    padding: 10px 0;
+    .comments-list { max-height: 400px; overflow-y: auto; margin-bottom: 15px; }
+    .no-comments { text-align: center; color: #999; padding: 20px; mat-icon { font-size: 48px; margin-bottom: 10px;} }
+    .comment-item {
+       margin-bottom: 15px;
+       border-bottom: 1px solid #eee;
+       padding-bottom: 10px;
+       .comment-header { display: flex; align-items: center; margin-bottom: 5px; gap: 8px; }
+       .comment-avatar { width: 30px; height: 30px; border-radius: 50%; background-color: $accent-color; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; }
+       .comment-meta { flex-grow: 1; strong { display: block; font-size: 0.9rem; } small { color: #777; font-size: 0.75rem;} }
+       .comment-content { font-size: 0.9rem; word-wrap: break-word; }
+    }
+    .add-comment {
+       display: flex;
+       flex-direction: column;
+       gap: 10px;
+       textarea { resize: vertical; }
+    }
+  }
+
+  // Özellikler
+  .properties-section {
+    padding: 10px 0;
+    h4 { margin-top: 15px; margin-bottom: 5px; font-size: 1rem; }
+    p { font-size: 0.9rem; color: #555; margin-bottom: 5px; }
+    .mat-mdc-form-field { margin-top: 10px; }
+    .mat-mdc-slide-toggle { margin: 10px 0; }
+    .shared-users { margin-top: 15px; }
+  }
+
+  // Sürümler
+  .versions-section {
+    padding: 10px 0;
+    .versions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .versions-list { max-height: 400px; overflow-y: auto; }
+    .no-versions { text-align: center; color: #999; padding: 20px; mat-icon { font-size: 48px; margin-bottom: 10px;} }
+    .version-item { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    .version-info { h3 { font-size: 0.95rem; margin: 0; } p { font-size: 0.8rem; color: #777; margin: 0; } }
+    mat-list-item { height: auto !important; padding: 10px 0 !important; }
+  }
+}
+
+// Kullanıcı menüsü başlığı
+.user-info-header {
+  padding: 10px 15px;
+  strong { display: block; }
+  small { color: #666; }
+}
+
+// Format menüsü içindeki başlık stilleri
+.format-menu {
+  .format-heading { font-size: 1.5em; font-weight: bold; }
+  .format-heading-2 { font-size: 1.2em; font-weight: bold; }
+  .format-heading-3 { font-size: 1.1em; font-weight: bold; }
+}
+
+// Global Snackbar Stilleri (styles.scss'e de konulabilir)
+.success-snackbar {
+  background-color: #4CAF50 !important;
+  color: white !important;
+}
+.error-snackbar {
+  background-color: #f44336 !important;
+  color: white !important;
+}
