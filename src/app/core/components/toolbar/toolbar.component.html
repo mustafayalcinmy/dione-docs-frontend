@@ -1,0 +1,64 @@
+<div class="main-toolbar">
+
+  <div class="menu-bar">
+    <div class="menu-item" (click)="toggleMenu('file')" [class.active]="menuOpen === 'file'">
+      File
+      <div class="dropdown-menu" *ngIf="menuOpen === 'file'">
+        <div class="menu-option" (click)="onNewClick()">New</div>
+        <div class="menu-option" (click)="handleMenuOption('open')">Open...</div>
+        <div class="menu-option" (click)="onSaveClick()">Save</div>
+        <div class="menu-option" (click)="handleMenuOption('share')">Share...</div>
+        <div class="menu-option" (click)="onDownloadClick()">Download</div>
+        <div class="menu-option" (click)="onPrintClick()">Print</div>
+      </div>
+    </div>
+
+    <div class="menu-item" (click)="toggleMenu('edit')" [class.active]="menuOpen === 'edit'">
+      Edit
+      <div class="dropdown-menu" *ngIf="menuOpen === 'edit'">
+        <div class="menu-option" (click)="onUndoClick()">Undo</div>
+        <div class="menu-option" (click)="onRedoClick()">Redo</div>
+        <div class="menu-option-divider"></div>
+        <div class="menu-option" (click)="handleMenuOption('cut')">Cut</div>
+        <div class="menu-option" (click)="handleMenuOption('copy')">Copy</div>
+        <div class="menu-option" (click)="handleMenuOption('paste')">Paste</div>
+        <div class="menu-option-divider"></div>
+        <div class="menu-option" (click)="handleMenuOption('select-all')">Select All</div>
+      </div>
+    </div>
+
+    <div class="menu-item" (click)="toggleMenu('format')" [class.active]="menuOpen === 'format'">
+      Format
+      <div class="dropdown-menu" *ngIf="menuOpen === 'format'">
+        <div class="menu-option" (click)="handleMenuOption('format-bold')">Bold</div>
+        <div class="menu-option" (click)="handleMenuOption('format-italic')">Italic</div>
+        <div class="menu-option" (click)="handleMenuOption('format-underline')">Underline</div>
+        </div>
+    </div>
+
+    <div class="menu-item" (click)="toggleMenu('insert')" [class.active]="menuOpen === 'insert'">
+      Insert
+      <div class="dropdown-menu" *ngIf="menuOpen === 'insert'">
+        <div class="menu-option" (click)="handleMenuOption('insert-image')">Image...</div>
+        <div class="menu-option" (click)="handleMenuOption('insert-table')">Table</div>
+        <div class="menu-option" (click)="handleMenuOption('insert-link')">Link...</div>
+        </div>
+    </div>
+    </div>
+
+  <div class="quick-actions">
+    <button class="action-button btn-text" title="New Document" (click)="onNewClick()">New</button>
+    <button class="action-button btn-text" title="Save Document" (click)="onSaveClick()">Save</button>
+    <button class="action-button btn-text" title="Download Document" (click)="onDownloadClick()">Download</button>
+
+    <button class="action-button btn-icon" title="Print" (click)="onPrintClick()">
+      <i class="material-icons">print</i>
+    </button>
+    <div class="action-divider"></div> <button class="action-button btn-icon" title="Undo" (click)="onUndoClick()">
+      <i class="material-icons">undo</i>
+    </button>
+    <button class="action-button btn-icon" title="Redo" (click)="onRedoClick()">
+      <i class="material-icons">redo</i>
+    </button>
+  </div>
+</div>

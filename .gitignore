@@ -1,44 +1,60 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
+# See https://help.github.com/ignore-files/ for more about ignoring files.
 
-# Compiled output
+# Compiled output, build artifacts, and temporary files
+######################################################
 /dist
 /tmp
 /out-tsc
 /bazel-out
+/coverage
+/.angular/cache
 
-# Node
+# Node dependencies and debug logs
+##################################
 /node_modules
-npm-debug.log
+*.log
+npm-debug.log*
 yarn-error.log
+yarn-debug.log
 
-# IDEs and editors
+# IDEs and editors specific files
+##################################
 .idea/
-.project
+/.project
 .classpath
-.vscode
-.c9/
-*.launch
 .settings/
-*.sublime-workspace
-.angular
-
-# Visual Studio Code
-.vscode/*
+/vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-.history/*
+.history
 
-# Miscellaneous
-/.angular/cache
+*.sublime-workspace
+.c9/
+*~
+*.sw[op]
+
+# Miscellaneous generated files
+################################
+/.angular
 .sass-cache/
 /connect.lock
-/coverage
 /libpeerconnection.log
 testem.log
 /typings
 
-# System files
+# Environment variables - DO NOT COMMIT SECRETS!
+###############################################
+*.env
+.env.*
+!.env.example
+
+# OS generated files
+####################
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
+ehthumbs.db
+Desktop.ini

@@ -1,0 +1,133 @@
+/* Styles for the main application toolbar */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons'); // Ensure Material Icons font is available
+
+.main-toolbar {
+  display: flex;
+  justify-content: space-between; // Push menus left, actions right
+  align-items: center; // Vertically center items
+  padding: 5px 10px; // Toolbar padding
+  background-color: #f8f9fa; // Light background
+  border-bottom: 1px solid #d1d5db; // Bottom border
+  height: 40px; // Define toolbar height
+  box-sizing: border-box;
+  flex-shrink: 0; // Prevent toolbar from shrinking in flex layouts
+}
+
+.menu-bar {
+  display: flex;
+  gap: 5px; // Space between File, Edit, etc.
+  position: relative; // Needed for absolute positioning of dropdowns
+  align-items: center;
+  height: 100%;
+}
+
+.menu-item {
+  padding: 5px 12px; // Padding inside menu items like 'File'
+  cursor: pointer;
+  border-radius: 4px;
+  position: relative;
+  font-size: 0.9em; // Slightly smaller font
+  color: #333;
+  height: calc(100% - 10px); // Fit within toolbar height with padding
+  display: flex;
+  align-items: center;
+  white-space: nowrap; // Prevent menu names from wrapping
+
+  &:hover {
+    background-color: #e8eaed; // Hover state
+  }
+
+  &.active {
+    background-color: #e0e2e6; // Active state (when dropdown is open)
+  }
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 2px); // Position below menu item
+  left: 0; // Align with left edge of menu item
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); // Dropdown shadow
+  border-radius: 4px;
+  min-width: 180px; // Minimum width for dropdown
+  z-index: 1000; // Ensure dropdown appears above other content
+  border: 1px solid #d1d5db;
+  padding: 5px 0; // Padding inside the dropdown container
+}
+
+.menu-option {
+  padding: 8px 16px; // Padding for individual options (e.g., 'Save')
+  cursor: pointer;
+  font-size: 0.9em;
+  color: #333;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: #f1f3f4; // Hover state for options
+  }
+}
+
+// Visual divider line within dropdown menus
+.menu-option-divider {
+   height: 1px;
+   background-color: #e0e0e0;
+   margin: 5px 0; // Space above/below divider
+}
+
+// Container for right-aligned buttons (Save, Print, Undo, etc.)
+.quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px; // Space between action buttons
+  height: 100%;
+}
+
+// General styling for all action buttons in the quick actions section
+.action-button {
+  background: none;
+  border: 1px solid transparent; // No border by default
+  color: #444; // Default text/icon color
+  cursor: pointer;
+  height: 28px; // Button height
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px; // Horizontal padding for text buttons
+  font-size: 0.9em;
+  white-space: nowrap; // Prevent text wrapping on buttons like 'Download'
+  transition: background-color 0.2s ease, border-color 0.2s ease; // Smooth transitions
+
+  &:hover {
+    background-color: #e8eaed; // Hover background
+    border-color: #d1d5db; // Show border on hover
+  }
+
+  &:active {
+     background-color: #d1d5db; // Clicked state background
+  }
+
+  // Specific styles for buttons containing only an icon
+  &.btn-icon {
+     width: 28px; // Make icon buttons square
+     padding: 0; // Remove padding for icon-only buttons
+     font-size: 1.1em; // Slightly larger icon size relative to text
+
+     // Target Material Icons specifically if used
+     i.material-icons {
+        font-size: 20px; // Explicit icon size
+        vertical-align: middle; // Ensure vertical alignment
+     }
+  }
+
+  // Styles specific to buttons containing text (redundant comment, but keeps structure)
+  // &.btn-text { }
+}
+
+// Visual divider line within the quick actions section
+.action-divider {
+   width: 1px;
+   height: 20px;
+   background-color: #d1d5db;
+   margin: 0 4px; // Space around divider
+}
