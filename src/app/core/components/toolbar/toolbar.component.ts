@@ -2,71 +2,69 @@ import { Component, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
- * Application's main toolbar component, handling top-level menus and quick actions.
- * Emits events for actions that need to be handled by the parent component (e.g., DocumentComponent).
+ * Application's main toolbar component. Emits events for parent component to handle.
  */
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [CommonModule], // Needed for *ngIf directive
+  imports: [CommonModule],
   templateUrl: './toolbar.component.html',
   styleUrls: ['./toolbar.component.scss']
 })
 export class ToolbarComponent {
-  /** Tracks which dropdown menu is currently open ('file', 'edit', etc.) */
   menuOpen: string | null = null;
 
-  // --- Event Outputs for Parent Component ---
-
-  /** Emits when the 'New' action is triggered. */
+  // --- Outputs ---
   @Output() newClick = new EventEmitter<void>();
-  /** Emits when the 'Save' action is triggered. */
   @Output() saveClick = new EventEmitter<void>();
-  /** Emits when the 'Download' action is triggered. */
   @Output() downloadClick = new EventEmitter<void>();
-  /** Emits when the 'Print' action is triggered. */
   @Output() printClick = new EventEmitter<void>();
-  /** Emits when the user requests an Undo action. */
-  @Output() undoClick = new EventEmitter<void>(); // Renamed for clarity
-  /** Emits when the user requests a Redo action. */
-  @Output() redoClick = new EventEmitter<void>(); // Renamed for clarity
+  @Output() undoClick = new EventEmitter<void>();
+  @Output() redoClick = new EventEmitter<void>();
+  /** Emits when 'Add New Page' is selected from the Insert menu. */
+  @Output() addNewPage = new EventEmitter<void>(); // Changed from insertPageBreak
+  /** Emits when a custom font size is entered (if input exists). */
+  @Output() fontSizeChange = new EventEmitter<string>();
 
-  /**
-   * Toggles the visibility of a specific dropdown menu.
-   * Closes any other currently open menu.
-   * @param menu The identifier ('file', 'edit', etc.) of the menu to toggle.
-   */
   toggleMenu(menu: string): void {
     const currentlyOpen = this.menuOpen;
-    this.closeAllMenus(); // Close any open menu first
-    // Open the new menu only if it wasn't the one already open
+    this.closeAllMenus();
     if (currentlyOpen !== menu) {
       this.menuOpen = menu;
     }
   }
 
-  /** Closes any currently open dropdown menu. */
   closeAllMenus(): void {
     this.menuOpen = null;
   }
 
-  // --- Action Emitter Methods ---
-
+  // --- Emitters for Actions ---
   onNewClick(): void { this.newClick.emit(); this.closeAllMenus(); }
   onSaveClick(): void { this.saveClick.emit(); this.closeAllMenus(); }
   onDownloadClick(): void { this.downloadClick.emit(); this.closeAllMenus(); }
   onPrintClick(): void { this.printClick.emit(); this.closeAllMenus(); }
-  onUndoClick(): void { console.log("Undo clicked in toolbar"); this.undoClick.emit(); this.closeAllMenus(); }
-  onRedoClick(): void { console.log("Redo clicked in toolbar"); this.redoClick.emit(); this.closeAllMenus(); }
+  onUndoClick(): void { this.undoClick.emit(); this.closeAllMenus(); }
+  onRedoClick(): void { this.redoClick.emit(); this.closeAllMenus(); }
 
-  /**
-   * Handles clicks on generic menu options.
-   * Placeholder for future functionality (e.g., Cut, Copy, Paste implementations).
-   * @param option Identifier for the clicked menu option.
-   */
+  /** Handles clicks on generic menu options or specific actions like adding a page. */
   handleMenuOption(option: string): void {
     console.log("Menu option clicked:", option);
-    // TODO: Implement logic or emit events for specific menu options (Cut, Copy, Paste, etc.)
+    if (option === 'insert-new-page') { // Use correct identifier
+      this.addNewPage.emit(); // Emit the event for adding a page div
+    } else {
+      // Handle other generic options if needed
+    }
+    this.closeAllMenus();
+  }
+
+  // --- Handler for Custom Font Size Input (if input exists in toolbar HTML) ---
+  onSizeInputChange(value: string | number): void {
+    const size = parseInt(value as string, 10);
+    if (!isNaN(size) && size > 0 && size < 1000) {
+        this.fontSizeChange.emit(`${size}px`);
+    } else if (value === '' || value === null) {
+        // this.fontSizeChange.emit(''); // Optional: signal to clear format
+    }
     this.closeAllMenus();
   }
 }

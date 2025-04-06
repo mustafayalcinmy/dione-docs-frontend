@@ -1,11 +1,10 @@
-/* Styles for the DocumentComponent and the Quill editor integration */
-
+/* document.component.scss */
 .document-editor {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Full viewport height */
+  height: 100vh;
   width: 100%;
-  background-color: #f0f0f0;
+  background-color: #f0f0f0; // Background for the whole editor area
   box-sizing: border-box;
 }
 
@@ -13,7 +12,7 @@
   padding: 10px 20px;
   background: #ffffff;
   border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0; /* Prevent shrinking */
+  flex-shrink: 0;
 }
 
 .document-title {
@@ -27,7 +26,6 @@
   border-radius: 4px;
   min-width: 150px;
   display: inline-block;
-
   &:focus {
     background-color: #f8f9fa;
     border-color: #ccc;
@@ -35,75 +33,88 @@
 }
 
 .toolbar-container {
-   flex-shrink: 0; /* Prevent shrinking */
-   border-bottom: 1px solid #ccc;
-   // Ensure the nested app-toolbar component displays correctly
-   app-toolbar {
-      display: block;
-   }
-}
-
-.editor-wrapper {
-  flex-grow: 1; /* Take remaining vertical space */
-  display: flex;
-  flex-direction: column;
-  background: #f0f0f0;
-  overflow: hidden; /* Hide overflow from editor container */
-  position: relative;
-}
-
-/* Styles for Quill's own toolbar (#toolbar) */
-#toolbar {
-  background-color: #f8f9fa;
-  padding: 8px 10px;
-  border-bottom: 1px solid #ccc;
   flex-shrink: 0;
-  box-sizing: border-box;
-  position: sticky; /* Keep toolbar visible when scrolling editor */
-  top: 0;
-  z-index: 10;
+  border-bottom: 1px solid #ccc;
+  app-toolbar { display: block; }
 }
 
-/* Container holding the actual editor */
-#editor-container {
+// Container holding all the pages, allows vertical scrolling
+.pages-container { // Renamed from editor-wrapper
   flex-grow: 1;
-  overflow-y: auto; /* Allow editor content to scroll */
-  background-color: #f0f0f0; // Background surrounding the "page"
-  position: relative;
+  overflow-y: auto;
+  background-color: #d0d0d0; // Background to see page separation
+  padding: 20px 0; // Padding top/bottom for scrolling space
+  box-sizing: border-box;
+}
 
-  /* The editable area itself, styled to look like a page */
-  .ql-editor {
-    min-height: calc(100vh - 150px); // Approximate remaining height
-    width: 8.5in; // Standard US Letter width
-    max-width: 100%;
-    margin: 20px auto; // Center the page horizontally, add top/bottom margin
-    padding: 1in; // Standard margins
-    background: white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.15);
+// Wrapper for each individual page, providing the paper look
+.document-page-wrapper {
+  margin: 0 auto 20px auto; // Center page wrappers, add bottom margin
+  width: 8.5in; // Width of the page paper
+  max-width: calc(100% - 40px); // Ensure fit on smaller screens
+  background: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  box-sizing: border-box;
+  position: relative; // For page number positioning
+  padding: 1in; // Page margins applied here
+  min-height: 11in; // Set min-height for the page wrapper
+}
+
+// Optional: Page number display
+.page-number {
+  position: absolute;
+  bottom: 0.5in;
+  right: 1in;
+  font-size: 10pt;
+  color: #888;
+}
+
+// The actual div where Quill is initialized
+.editor-instance-container {
+  // Ensure it fills the padding area of the wrapper
+  min-height: calc(11in - 2in); // Height minus top/bottom padding from wrapper
+  box-sizing: border-box;
+  outline: none; // Remove potential focus outline
+
+  // Quill styles specific to each instance container
+  .ql-toolbar.ql-snow {
+    background-color: #f8f9fa;
+    border: 1px solid #ccc;
+    padding: 6px 8px;
     box-sizing: border-box;
-    color: #333;
-    font-size: 11pt;
-    line-height: 1.5;
+    border-radius: 4px 4px 0 0; // Rounded top
   }
 
-  /* Placeholder text styling */
+  .ql-container.ql-snow {
+     border: 1px solid #ccc;
+     border-top: none; // Toolbar has bottom border
+     border-radius: 0 0 4px 4px; // Rounded bottom
+     min-height: calc(11in - 2in - 42px); // Approx height minus toolbar/padding
+     box-sizing: border-box;
+     font-size: 11pt;
+     line-height: 1.5;
+     color: #333;
+     background-color: white; // Ensure editor area itself is white
+  }
+
+  .ql-editor {
+    padding: 15px; // Add some padding inside the editor area itself
+    min-height: calc(11in - 2in - 42px - 30px); // Adjust based on internal padding
+    box-shadow: none;
+    margin: 0;
+    width: 100%;
+    background: transparent; // Let container handle background
+  }
+
+  /* Placeholder specific to each instance */
   .ql-editor.ql-blank::before {
     content: attr(data-placeholder);
     position: absolute;
-    /* Position relative to editor container, considering .ql-editor padding/margin */
-    top: calc(20px + 1in); // Align with top padding+margin of .ql-editor
-    left: calc(50% - (8.5in / 2) + 1in); // Align with left padding of centered .ql-editor
-    max-width: calc(8.5in - 2in); // Constrain width
-
+    top: 15px; // Match internal editor padding
+    left: 15px; // Match internal editor padding
     color: rgba(0, 0, 0, 0.5);
     pointer-events: none;
     font-style: italic;
-    font-size: 11pt; // Match editor font size
-    box-sizing: border-box;
+    font-size: 11pt;
   }
-}
-
-/* Global Quill overrides */
-.ql-container.ql-snow {
-  border: none; /* Remove default Quill border around editor area */
 }

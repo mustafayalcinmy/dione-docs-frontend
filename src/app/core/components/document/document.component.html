@@ -1,5 +1,4 @@
 <div class="document-editor">
-
   <div class="document-header">
     <h1 class="document-title"
         contenteditable="true"
@@ -12,56 +11,19 @@
       (newClick)="handleNew()"
       (saveClick)="handleSave()"
       (downloadClick)="handleDownload()"
-      (printClick)="handlePrint()">
-      </app-toolbar>
+      (printClick)="handlePrint()"
+      (addNewPage)="handleAddNewPage()" (undoClick)="handleUndo()"
+      (redoClick)="handleRedo()"
+      (fontSizeChange)="applyFontSize($event)"> </app-toolbar>
   </div>
 
-  <div class="editor-wrapper">
+  <div class="pages-container editor-wrapper">
+    <div *ngFor="let page of pages; let i = index" class="document-page-wrapper">
+      <div class="page-number">Page {{ i + 1 }}</div>
 
-    <div id="toolbar">
-      <span class="ql-formats">
-        <button class="ql-bold" title="Bold"></button>
-        <button class="ql-italic" title="Italic"></button>
-        <button class="ql-underline" title="Underline"></button>
-      </span>
-      <span class="ql-formats">
-        <select class="ql-font" title="Font">
-          <option selected>Sans Serif</option>
-          <option value="serif">Serif</option>
-          <option value="monospace">Monospace</option>
-        </select>
-        <select class="ql-size" title="Font Size">
-          <option value="small">Small</option>
-          <option selected>Normal</option>
-          <option value="large">Large</option>
-          <option value="huge">Huge</option>
-        </select>
-      </span>
-      <span class="ql-formats">
-        <select class="ql-align" title="Text Alignment">
-          <option selected></option>
-          <option value="center"></option>
-          <option value="right"></option>
-          <option value="justify"></option>
-        </select>
-      </span>
-      <span class="ql-formats">
-        <button class="ql-list" value="ordered" title="Numbered List"></button>
-        <button class="ql-list" value="bullet" title="Bullet List"></button>
-        <button class="ql-indent" value="-1" title="Decrease Indent"></button>
-        <button class="ql-indent" value="+1" title="Increase Indent"></button>
-      </span>
-      <span class="ql-formats">
-        <button class="ql-link" title="Insert Link"></button>
-        <button class="ql-image" title="Insert Image"></button>
-      </span>
-      <span class="ql-formats">
-        <select class="ql-color" title="Text Color"></select>
-        <select class="ql-background" title="Background Color"></select>
-      </span>
-      </div>
-
-    <div id="editor-container"></div>
+      <div class="editor-instance-container" [id]="page.id">
+        </div>
+    </div>
   </div>
 
-  </div>
+</div>
