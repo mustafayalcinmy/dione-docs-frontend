@@ -4,7 +4,7 @@
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  background-color: #f0f0f0; // Background for the whole editor area
+  background-color: #f0f0f0;
   box-sizing: border-box;
 }
 
@@ -35,32 +35,36 @@
 .toolbar-container {
   flex-shrink: 0;
   border-bottom: 1px solid #ccc;
-  app-toolbar { display: block; }
+  app-toolbar {
+    display: block;
+  }
 }
 
-// Container holding all the pages, allows vertical scrolling
-.pages-container { // Renamed from editor-wrapper
+.pages-container {
   flex-grow: 1;
   overflow-y: auto;
-  background-color: #d0d0d0; // Background to see page separation
-  padding: 20px 0; // Padding top/bottom for scrolling space
+  background-color: #d0d0d0; // Arka plan, sayfalar arasında görünür
+  padding: 20px 0; // İlk ve son sayfa için üst/alt padding
   box-sizing: border-box;
+  display: flex; /* Sayfaları dikeyde sıralamak ve ortalamak için */
+  flex-direction: column; /* Sayfaları dikeyde sıralar */
+  align-items: center; /* Sayfaları yatayda ortalar */
 }
 
-// Wrapper for each individual page, providing the paper look
 .document-page-wrapper {
-  margin: 0 auto 20px auto; // Center page wrappers, add bottom margin
-  width: 8.5in; // Width of the page paper
-  max-width: calc(100% - 40px); // Ensure fit on smaller screens
+  margin: 0 0 20px 0; // Alt boşluk, yatayda ortalamayı pages-container yapar
+  width: 8.5in;
+  max-width: calc(100% - 40px); // Dar ekranlarda taşmayı önle
+  min-height: 11in; // Kağıt yüksekliği
   background: white;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.3);
   box-sizing: border-box;
-  position: relative; // For page number positioning
-  padding: 1in; // Page margins applied here
-  min-height: 11in; // Set min-height for the page wrapper
+  position: relative;
+  padding: 1in; // Sayfa kenar boşlukları
+  display: flex; // İçeriğin (editor-instance-container) esnek büyümesi için
+  flex-direction: column; // İçeriği dikeyde yönetmek için
 }
 
-// Optional: Page number display
 .page-number {
   position: absolute;
   bottom: 0.5in;
@@ -69,52 +73,98 @@
   color: #888;
 }
 
-// The actual div where Quill is initialized
 .editor-instance-container {
-  // Ensure it fills the padding area of the wrapper
-  min-height: calc(11in - 2in); // Height minus top/bottom padding from wrapper
+  flex-grow: 1; // Sayfa wrapper'ı içindeki tüm boşluğu doldurur
+  display: flex; // .ql-container'ın esnek büyümesi için
+  flex-direction: column; // .ql-container'ı dikeyde yönetmek için
   box-sizing: border-box;
-  outline: none; // Remove potential focus outline
-
-  // Quill styles specific to each instance container
-  .ql-toolbar.ql-snow {
-    background-color: #f8f9fa;
-    border: 1px solid #ccc;
-    padding: 6px 8px;
-    box-sizing: border-box;
-    border-radius: 4px 4px 0 0; // Rounded top
-  }
+  outline: none;
+  position: relative; // Placeholder için
 
   .ql-container.ql-snow {
-     border: 1px solid #ccc;
-     border-top: none; // Toolbar has bottom border
-     border-radius: 0 0 4px 4px; // Rounded bottom
-     min-height: calc(11in - 2in - 42px); // Approx height minus toolbar/padding
-     box-sizing: border-box;
-     font-size: 11pt;
-     line-height: 1.5;
-     color: #333;
-     background-color: white; // Ensure editor area itself is white
+    border: none !important; // Quill'in varsayılan border'ını kaldır
+    flex-grow: 1; // Kendisine ayrılan alanı doldurur
+    display: flex; // .ql-editor'ın esnek büyümesi için
+    flex-direction: column; // .ql-editor'ı dikeyde yönetmek için
+    box-sizing: border-box;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #333;
+    background-color: transparent;
+    padding: 0 !important; // Quill container padding'ini kaldır (sayfa wrapper'ı hallediyor)
+    overflow: visible; // İçerik taşarsa scrollbar'ı pages-container halleder
   }
 
   .ql-editor {
-    padding: 15px; // Add some padding inside the editor area itself
-    min-height: calc(11in - 2in - 42px - 30px); // Adjust based on internal padding
+    padding: 0; // Sayfa kenar boşlukları document-page-wrapper tarafından sağlanıyor
+                // Eğer içeride ek bir padding isteniyorsa (örn: 10px) ayarlanabilir
+    flex-grow: 1; // .ql-container içindeki tüm alanı doldurur
+    box-sizing: border-box;
+    background: transparent;
     box-shadow: none;
     margin: 0;
     width: 100%;
-    background: transparent; // Let container handle background
+    outline: none;
+    position: relative;
+    z-index: 1;
+    // height: auto; // İçeriğe göre otomatik yükseklik, min-height parent'tan gelir
+    // min-height: initial; // Ya da Quill'in kendi min-height'ını sıfırla
   }
 
-  /* Placeholder specific to each instance */
   .ql-editor.ql-blank::before {
     content: attr(data-placeholder);
     position: absolute;
-    top: 15px; // Match internal editor padding
-    left: 15px; // Match internal editor padding
+    top: 0; // .ql-editor padding'i 0 ise
+    left: 0; // .ql-editor padding'i 0 ise
+    // Eğer .ql-editor'a padding verilirse, buradaki top/left ona göre ayarlanmalı
+    // Örneğin: top: 10px; left: 10px; padding: 10px; (placeholder'ın metinle hizalı olması için)
     color: rgba(0, 0, 0, 0.5);
     pointer-events: none;
     font-style: italic;
     font-size: 11pt;
+    z-index: 2;
+  }
+
+  // Quill'in kendi toolbar'ını kesinlikle gizle
+  .ql-toolbar {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+  }
+}
+
+/* Print stilleri için eklemeler gerekebilir */
+@media print {
+  .document-editor {
+    height: auto;
+    background-color: white;
+  }
+  .toolbar-container, .document-header, .page-number {
+    display: none !important; /* Yazdırma sırasında toolbar ve başlığı gizle */
+  }
+  .pages-container {
+    overflow-y: visible;
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+  }
+  .document-page-wrapper {
+    margin: 0 auto; /* Sayfaları ortala */
+    box-shadow: none;
+    border: none; /* Yazdırmada sayfa kenarlığı olmasın */
+    padding: 1in; /* Kenar boşlukları kalsın */
+    page-break-after: always; /* Her sayfadan sonra sayfa sonu */
+    max-width: 100%; /* Yazdırma için genişliği serbest bırak */
+    min-height: auto; /* İçeriğe göre yükseklik */
+  }
+  .document-page-wrapper:last-child {
+    page-break-after: avoid;
+  }
+  .editor-instance-container .ql-editor {
+    padding: 0; /* Yazdırmada iç padding'i sıfırla */
   }
 }

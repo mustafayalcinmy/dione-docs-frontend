@@ -1,21 +1,22 @@
-/* Styles for the main application toolbar */
+/* toolbar.component.scss */
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons'); // Ensure Material Icons font is available
 
 .main-toolbar {
   display: flex;
-  justify-content: space-between; // Push menus left, actions right
-  align-items: center; // Vertically center items
-  padding: 5px 10px; // Toolbar padding
+  justify-content: flex-start; // Align items to the start initially
+  align-items: center;
+  padding: 5px 10px;
   background-color: #f8f9fa; // Light background
   border-bottom: 1px solid #d1d5db; // Bottom border
   height: 40px; // Define toolbar height
   box-sizing: border-box;
-  flex-shrink: 0; // Prevent toolbar from shrinking in flex layouts
+  flex-shrink: 0;
+  gap: 15px; // Add gap between main sections (menus, format, actions)
 }
 
 .menu-bar {
   display: flex;
-  gap: 5px; // Space between File, Edit, etc.
+  gap: 5px; // Spacing between menu items
   position: relative; // Needed for absolute positioning of dropdowns
   align-items: center;
   height: 100%;
@@ -32,14 +33,8 @@
   display: flex;
   align-items: center;
   white-space: nowrap; // Prevent menu names from wrapping
-
-  &:hover {
-    background-color: #e8eaed; // Hover state
-  }
-
-  &.active {
-    background-color: #e0e2e6; // Active state (when dropdown is open)
-  }
+  &:hover { background-color: #e8eaed; } // Hover state
+  &.active { background-color: #e0e2e6; } // Active state (when dropdown is open)
 }
 
 .dropdown-menu {
@@ -61,10 +56,7 @@
   font-size: 0.9em;
   color: #333;
   white-space: nowrap;
-
-  &:hover {
-    background-color: #f1f3f4; // Hover state for options
-  }
+  &:hover { background-color: #f1f3f4; } // Hover state for options
 }
 
 // Visual divider line within dropdown menus
@@ -74,60 +66,166 @@
    margin: 5px 0; // Space above/below divider
 }
 
-// Container for right-aligned buttons (Save, Print, Undo, etc.)
+// Container for format controls (Bold, Italic, Size etc.)
+.format-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px; // Space between format buttons/controls
+  height: 100%;
+  // flex-grow: 1; // Optionally allow grow
+  // flex-shrink: 1; // Allow shrinking
+}
+
+// Container for right-aligned actions (Save, Print, etc.)
 .quick-actions {
   display: flex;
   align-items: center;
-  gap: 8px; // Space between action buttons
+  gap: 8px;
   height: 100%;
+  margin-left: auto; // Push this section to the far right
 }
 
-// General styling for all action buttons in the quick actions section
-.action-button {
+// Shared styles for buttons within format-controls and quick-actions
+.action-button, .format-controls button {
   background: none;
   border: 1px solid transparent; // No border by default
   color: #444; // Default text/icon color
   cursor: pointer;
-  height: 28px; // Button height
+  height: 28px; // Consistent height
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 8px; // Horizontal padding for text buttons
+  padding: 0 8px; // Default padding
   font-size: 0.9em;
-  white-space: nowrap; // Prevent text wrapping on buttons like 'Download'
+  white-space: nowrap; // Prevent text wrapping
   transition: background-color 0.2s ease, border-color 0.2s ease; // Smooth transitions
 
   &:hover {
     background-color: #e8eaed; // Hover background
     border-color: #d1d5db; // Show border on hover
   }
-
   &:active {
      background-color: #d1d5db; // Clicked state background
   }
 
-  // Specific styles for buttons containing only an icon
+  // Specific styles for icon-only buttons
   &.btn-icon {
      width: 28px; // Make icon buttons square
      padding: 0; // Remove padding for icon-only buttons
-     font-size: 1.1em; // Slightly larger icon size relative to text
-
-     // Target Material Icons specifically if used
+     font-size: 1.1em; // Slightly larger icon size relative to text size
      i.material-icons {
         font-size: 20px; // Explicit icon size
         vertical-align: middle; // Ensure vertical alignment
      }
   }
-
-  // Styles specific to buttons containing text (redundant comment, but keeps structure)
+  // Styles for text buttons (commented out as no special styles needed currently)
   // &.btn-text { }
 }
 
-// Visual divider line within the quick actions section
+// // Style for the Font Size dropdown in format controls
+// .format-controls .font-size-select {
+//   height: 28px; // Match button height
+//   border: 1px solid #ccc;
+//   border-radius: 4px;
+//   padding: 0 6px; // Adjust padding
+//   font-size: 0.9em;
+//   background-color: white;
+//   margin: 0 3px; // Spacing
+//   cursor: pointer;
+//   outline: none;
+//   vertical-align: middle; // Align with buttons
+//   &:hover { border-color: #bbb; }
+//   &:focus { border-color: #8ab4f8; } // Highlight focus
+// }
+
+// Visual divider line within quick actions or format controls
 .action-divider {
    width: 1px;
    height: 20px;
    background-color: #d1d5db;
-   margin: 0 4px; // Space around divider
+   margin: 0 4px;
+   vertical-align: middle; // Align divider vertically
+}
+
+
+// Font Size Kontrolü için Stiller
+.font-size-select-wrapper {
+  position: relative; // Dropdown'ın doğru konumlanması için
+  display: inline-block; // Veya flex item ise uygun şekilde
+  height: 28px; // Diğer butonlarla aynı yükseklik
+  vertical-align: middle;
+  margin: 0 3px;
+}
+
+.font-size-display-area {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 6px 0 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+  min-width: 60px; // Metin ve ok için minimum genişlik
+  box-sizing: border-box;
+
+  &:hover {
+    border-color: #bbb;
+  }
+
+  .current-size-text {
+    font-size: 0.9em;
+    margin-right: 4px; // Ok ile arasında boşluk
+    user-select: none; // Metnin seçilmesini engelle
+    flex-grow: 1; // Mümkün olduğunca genişle
+    text-align: center; // Veya left
+  }
+
+  .custom-font-size-input {
+    width: 40px; // Giriş alanı için genişlik
+    height: calc(100% - 4px); // İçeride biraz boşluk bırak
+    border: none;
+    outline: none;
+    text-align: center;
+    font-size: 0.9em;
+    padding: 0 2px;
+    box-sizing: border-box;
+    // Firefox'ta number input oklarını gizle
+    -moz-appearance: textfield;
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+
+  .arrow-icon {
+    font-size: 20px;
+    color: #5f6368;
+  }
+}
+
+.font-size-dropdown-list {
+  position: absolute;
+  top: 100%; // Display area'nın hemen altında
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-top: none; // Display area ile birleşik görünüm
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1001; // Diğer dropdown menülerden üstte olabilir
+  max-height: 200px; // Gerekirse scroll eklenebilir
+  overflow-y: auto;
+  min-width: 100%; // Wrapper kadar geniş
+
+  .font-size-item {
+    padding: 6px 12px;
+    font-size: 0.9em;
+    cursor: pointer;
+    &:hover {
+      background-color: #f1f3f4;
+    }
+  }
 }
