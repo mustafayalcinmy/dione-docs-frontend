@@ -1,11 +1,11 @@
 <div class="header">
     <div class="header-container">
-            <button class="add-button">
-                <mat-icon class="add-circle" (click)="new_document()">add_circle_outline</mat-icon>
-            </button>
-        <div class="search-doc"> <input type="search"
-                   placeholder="Search for document..."
-                   (keyup)="applyFilter($event)"  #searchInput> <button type="button"> <mat-icon>search</mat-icon>
+        <div></div> <div class="search-doc">
+            <input type="search"
+                   placeholder="Dökümanlarda Ara..."
+                   (keyup)="applyFilter($event)" #searchInput>
+            <button type="button" mat-icon-button aria-label="Search documents">
+                <mat-icon>search</mat-icon>
             </button>
         </div>
     </div>
@@ -13,47 +13,109 @@
 
 <div class="recent-docs">
     <div class="recent-docs-header">
-        <span>Recent Documents</span>
+        <span>Son Kullanılan Dökümanlar</span>
     </div>
-    <div class="docs">
-        <div class="doc"
-             *ngFor="let doc of recentDocuments"
-             (click)="openDocument(doc)"
-             matRipple> <span class="doc-name">{{ doc.name }}</span>
+    <div *ngIf="isLoading" class="loading-indicator">
+        <p>Son kullanılan dokümanlar yükleniyor...</p>
+        <div class="docs placeholders">
+            <div class="doc placeholder-doc" *ngFor="let _ of [1, 2, 3, 4]"></div>
+        </div>
+    </div>
+    <div *ngIf="!isLoading">
+        <div class="docs" *ngIf="recentDocuments.length > 0; else noRecentDocs">
+            <div class="doc new-doc-placeholder" (click)="new_document()" matRipple>
+                <mat-icon class="new-doc-icon">add_circle_outline</mat-icon>
+                <span class="new-doc-text">Yeni Döküman Oluştur</span>
+            </div>
 
+            <div class="doc"
+                 *ngFor="let doc of recentDocuments"
+                 (click)="openDocument(doc)"
+                 matRipple
+                 [title]="doc.title">
+                <span class="doc-name">{{ doc.title }}</span>
+                </div>
         </div>
-        <div *ngIf="recentDocuments.length === 0" class="no-recent-docs">
-            No recently updated documents found.
-        </div>
+        <ng-template #noRecentDocs>
+            <div class="docs">
+                 <div class="doc new-doc-placeholder" (click)="new_document()" matRipple>
+                    <mat-icon class="new-doc-icon">add_circle_outline</mat-icon>
+                    <span class="new-doc-text">Yeni Döküman Oluştur</span>
+                </div>
+                <div class="doc placeholder-doc disabled-doc" *ngFor="let i of [1,2,3,4]" [title]="'Son kullanılan doküman bulunamadı. Yeni bir tane oluşturun veya mevcut dokümanlarınızı açın.'">
+                    <mat-icon class="placeholder-icon">insert_drive_file</mat-icon>
+                    <span class="placeholder-text">Yer Tutucu {{i}}</span>
+                </div>
+            </div>
+        </ng-template>
     </div>
 </div>
 
 <div class="table-container">
-    <table mat-table [dataSource]="dataSource" matSort> <ng-container matColumnDef="favorite">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header> Favorite </th> <td mat-cell *matCellDef="let element">
-            <mat-icon [style.color]="element.favorite ? 'red' : 'grey'">
-            {{ element.favorite ? 'favorite' : 'favorite_border' }}
-            </mat-icon>
-        </td>
-        </ng-container>
+    <div *ngIf="isLoading" class="loading-indicator">
+        <p>Tüm dokümanlar yükleniyor...</p>
+    </div>
+    <div *ngIf="!isLoading">
+        <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8">
+            <ng-container matColumnDef="favorite">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Favori </th>
+                <td mat-cell *matCellDef="let element">
+                    <button mat-icon-button (click)="toggleFavorite(element); $event.stopPropagation();" [attr.aria-label]="element.favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'">
+                        <mat-icon [style.color]="element.favorite ? 'red' : 'grey'">
+                            {{ element.favorite ? 'favorite' : 'favorite_border' }}
+                        </mat-icon>
+                    </button>
+                </td>
+            </ng-container>
 
-        <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header> Name </th> <td mat-cell *matCellDef="let element"> {{ element.name }} </td>
-        </ng-container>
+            <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> İsim </th>
+                <td mat-cell *matCellDef="let element" (click)="openDocument(element)" style="cursor: pointer;" [title]="element.title"> {{element.title}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="lastUpdate">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header> Last Update </th> <td mat-cell *matCellDef="let element"> {{ element.lastUpdate }} </td>
-        </ng-container>
+            <ng-container matColumnDef="lastUpdate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Son Güncelleme </th>
+                <td mat-cell *matCellDef="let element"> {{element.updated_at | date:'mediumDate'}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header> Created At </th> <td mat-cell *matCellDef="let element"> {{ element.createdAt }} </td>
-        </ng-container>
+            <ng-container matColumnDef="createdAt">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Oluşturulma Tarihi </th>
+                <td mat-cell *matCellDef="let element"> {{element.created_at | date:'mediumDate'}} </td>
+            </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef> İşlemler </th>
+                <td mat-cell *matCellDef="let element">
+                    <button mat-icon-button (click)="editDocument(element); $event.stopPropagation();" matTooltip="Düzenle" aria-label="Düzenle">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="deleteDocument(element); $event.stopPropagation();" matTooltip="Sil" aria-label="Sil">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
 
-        <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell" colspan="4">No data matching the filter "{{searchInput.value}}"</td> </tr>
-    </table>
-    <mat-paginator [length]="dataSource.data.length" [pageSize]="5" [pageSizeOptions]="[5, 10, 25, 100]"> </mat-paginator>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+                <td mat-cell [attr.colspan]="displayedColumns.length" class="no-data-cell">
+                    <ng-container *ngIf="searchInput.value && allUserDocuments.length > 0">
+                        Filtreyle eşleşen veri bulunamadı "{{searchInput.value}}"
+                    </ng-container>
+                    <ng-container *ngIf="!searchInput.value && allUserDocuments.length === 0 && !isLoading">
+                        Hiç doküman bulunmuyor. Yeni bir tane oluşturun!
+                    </ng-container>
+                     <ng-container *ngIf="searchInput.value && allUserDocuments.length === 0 && !isLoading">
+                        Filtreyle eşleşen veri bulunamadı "{{searchInput.value}}"
+                    </ng-container>
+                </td>
+            </tr>
+        </table>
+
+        <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]"
+                       showFirstLastButtons
+                       aria-label="Select page of documents">
+        </mat-paginator>
+    </div>
 </div>
