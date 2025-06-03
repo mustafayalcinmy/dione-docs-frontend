@@ -1,15 +1,20 @@
-// dione-docs-frontend/src/app/core/components/document/document.component.ts
-import { Component, OnInit, AfterViewInit, Inject, PLATFORM_ID, ViewEncapsulation, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, Inject, PLATFORM_ID, ViewEncapsulation, ChangeDetectorRef, OnDestroy, HostListener } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 import Quill from 'quill';
-import Delta, { Op } from 'quill-delta'; // Op tipini import etmeye devam et
+import Delta, { Op } from 'quill-delta';
+import { Observable, Subject, Subscription, of } from 'rxjs';
+import { debounceTime, filter, switchMap, tap, catchError } from 'rxjs/operators';
 
 import { DocumentService } from '../../services/document.service';
 import { AuthService } from '../../services/auth.service';
 import { QuillDelta, DocumentPayload } from '../../dto/document.dto';
+
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+
 
 interface QuillRange { index: number; length: number; }
 type QuillSources = 'user' | 'api' | 'silent';
@@ -18,27 +23,46 @@ interface DocumentPage {
   id: string;
   initialContent?: QuillDelta;
 }
+interface BetterTableModule {
+  insertTable(rows: number, columns: number): void;
+}
 
 const QUILL_FONT_SIZES_WHITELIST = ['8px', '9px', '10px', '12px', '14px', '16px', '20px', '24px', '32px', '42px', '54px', '68px', '84px', '98px'];
-
+const QUILL_FONT_STYLES_WHITELIST = [
+  'arial, sans-serif',
+  'Comic Sans MS, cursive',
+  'courier-new, monospace',
+  'garamond, serif',
+  'georgia, serif',
+  'helvetica, sans-serif',
+  'impact, sans-serif',
+  'lato, sans-serif',
+  'montserrat, sans-serif',
+  'roboto, sans-serif',
+  'times-new-roman, serif',
+  'verdana, sans-serif'
+];
 @Component({
   selector: 'app-document',
   standalone: true,
   imports: [
     CommonModule,
-    ToolbarComponent
+    ToolbarComponent,
+    MatIconModule,
+    MatButtonModule
   ],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
 export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
-  title = 'Adsız Döküman';
+  title = 'Untited Document';
   pages: DocumentPage[] = [];
   editorInstances = new Map<string, Quill>();
   public QuillLib: typeof Quill | null = null;
   private DeltaConstructor: typeof Delta | null = null;
   private Parchment: any = null;
+  private activeTypingFormats: any = {};
 
   private activeEditorInstanceId: string | null = null;
   private lastKnownSelection: { editorId: string, range: QuillRange } | null = null;
@@ -55,20 +79,31 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   private currentDocumentIsPublic: boolean = false;
   private currentDocumentStatus: string = 'draft';
   private currentDocumentDescription: string = '';
-
+  private isDirty = false;
+  public saveStatus: string = 'Tüm değişiklikler kaydedildi'; // Metinler daha dinamik olacak
+  private autoSaveSubject = new Subject<void>();
+  private autoSaveSubscription: Subscription | null = null;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private changeDetector: ChangeDetectorRef,
     private documentService: DocumentService,
-    private authService: AuthService, // Kullanılıyorsa kalsın
+    private authService: AuthService,
     private route: ActivatedRoute,
-    private router: Router // Router eklendi
+    private router: Router
   ) { }
 
   ngOnInit(): void {
     if (this.pages.length === 0 && !this.route.snapshot.paramMap.get('id')) {
       this.pages.push({ id: this.generatePageId(), initialContent: { ops: [{ insert: '\n' }] } });
+    }
+    this.initializeAutoSave();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: any): void {
+    if (this.isDirty) {
+      $event.returnValue = true;
     }
   }
 
@@ -80,17 +115,30 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
           this.QuillLib = QuillImport.default;
           const DeltaImport = await import('quill-delta');
           this.DeltaConstructor = DeltaImport.default;
+          const QuillBetterTable = (await import('quill-better-table')).default;
 
           if (this.QuillLib && this.DeltaConstructor) {
+            this.QuillLib.register({
+              'modules/better-table': QuillBetterTable
+            }, true);
             this.Parchment = this.QuillLib.import('parchment');
+            const FontStyle = this.QuillLib.import('attributors/style/font') as any;
+
+            FontStyle.whitelist = QUILL_FONT_STYLES_WHITELIST;
+            this.QuillLib.register(FontStyle, true);
             const SizeStyleAttributor = this.QuillLib.import('attributors/style/size') as any;
             if (SizeStyleAttributor) {
               SizeStyleAttributor.whitelist = QUILL_FONT_SIZES_WHITELIST;
               this.QuillLib.register(SizeStyleAttributor, true);
-            } else {
-              console.error("Failed to import 'attributors/style/size'");
             }
 
+            const inchesToPx = (inches: number) => inches * 96;
+            this.PAGE_CONTENT_TARGET_HEIGHT_PX = inchesToPx(11 - 1 - 1);
+
+            const ColorStyleAttributor = this.QuillLib.import('attributors/style/color') as any;
+            if (ColorStyleAttributor) {
+              this.QuillLib.register(ColorStyleAttributor, true);
+            }
             this.route.paramMap.subscribe(params => {
               const id = params.get('id');
               if (id) {
@@ -105,24 +153,8 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
               }
             });
-
-            setTimeout(() => {
-              if (this.pages.length > 0 && document.getElementById(this.pages[0].id)) { // Check if element exists
-                const firstPageDiv = document.getElementById(this.pages[0].id);
-                if (firstPageDiv) { // Redundant check, but safe
-                  const editorInstanceContainer = firstPageDiv.querySelector('.editor-instance-container') as HTMLElement;
-                  if (editorInstanceContainer) {
-                    const inchesToPx = (inches: number) => inches * 96;
-                    this.PAGE_CONTENT_TARGET_HEIGHT_PX = inchesToPx(11 - 2);
-                  }
-                }
-              }
-            }, 200);
-          } else {
-            console.error("Failed to load Quill library or Delta constructor!");
           }
         } catch (error) {
-          console.error("Error loading Quill or related modules:", error);
         }
       } else {
         this.route.paramMap.subscribe(params => {
@@ -138,83 +170,101 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.editorInstances.forEach((editor) => {
-      // Gerekirse olay dinleyicilerini kaldır veya Quill destroy metotlarını çağır
-    });
+    this.editorInstances.forEach((editor) => { });
     this.editorInstances.clear();
+    if (this.autoSaveSubscription) {
+      this.autoSaveSubscription.unsubscribe();
+    }
   }
 
-  private loadDocumentData(docId: string): void {
-    console.log(`loadDocumentData çağrıldı, docId: ${docId}`);
-    this.documentService.getDocument(docId).subscribe({
-      next: (doc: DocumentPayload) => {
-        console.log('loadDocumentData - Alınan doküman:', doc);
-        this.title = doc.title;
-        this.currentDocumentId = doc.id ?? null;
-        this.currentDocumentVersion = doc.version ?? 1;
-        this.currentDocumentOwnerId = doc.owner_id ?? null;
-        this.currentDocumentIsPublic = doc.is_public ?? false;
-        this.currentDocumentStatus = doc.status ?? 'draft';
-        this.currentDocumentDescription = doc.description ?? '';
-
-        this.updateTitleInDOM();
-
-        if (doc.content && this.DeltaConstructor && this.QuillLib) {
-          // doc.content'in geçerli bir QuillDelta olduğundan emin olalım
-          // mapResponseToPayload bunu zaten sağlamalı.
-          console.log('loadDocumentData - Quill editörüne yüklenecek içerik:', doc.content);
-
-          // Mevcut sayfaları ve editörleri temizle
-          this.editorInstances.forEach(editor => editor.disable()); // Varsa disable et
-          this.editorInstances.clear();
-          this.pages = []; // Sayfaları temizle
-          this.changeDetector.detectChanges(); // DOM'u temizlemek için
-
-          // Yeni sayfayı ve içeriği ayarla
-          // TODO: Çoklu sayfa mantığı burada daha detaylı ele alınmalı eğer backend tek bir delta gönderiyorsa.
-          // Şimdilik, backend'den gelen tüm içeriği ilk sayfaya yüklüyoruz.
-          // Eğer backend sayfa bazlı delta göndermiyorsa, sayfa bölme mantığı overflow'da çalışacak.
-          const firstPageId = this.generatePageId();
-          this.pages = [{ id: firstPageId, initialContent: doc.content }]; // doc.content zaten QuillDelta
-          console.log('loadDocumentData - Yeni sayfa oluşturuldu:', this.pages[0]);
-
-          this.changeDetector.detectChanges(); // Yeni sayfa elementinin DOM'a eklenmesi için
-
-          setTimeout(() => {
-            this.initializeVisiblePageEditors(); // Bu, yeni Quill örneğini oluşturur ve setContents yapar
-            if (this.pages.length > 0 && this.editorInstances.has(this.pages[0].id)) {
-              this.activeEditorInstanceId = this.pages[0].id;
-              const firstEditor = this.editorInstances.get(this.pages[0].id);
-              if (firstEditor) {
-                console.log('loadDocumentData - İlk editöre odaklanılıyor.');
-                firstEditor.focus();
-                // İçerik zaten initializeVisiblePageEditors içinde set ediliyor.
-                // Gerekirse burada tekrar set edilebilir ancak genellikle gerekmez.
-                // firstEditor.setContents(new this.DeltaConstructor(doc.content.ops), this.QuillLib.sources.SILENT);
-              } else {
-                console.error('loadDocumentData - İlk editör örneği bulunamadı.');
-              }
-            } else {
-              console.error('loadDocumentData - Sayfa veya editör örneği initialize edilemedi.');
-            }
-          }, 150); // DOM güncellemeleri ve Quill başlatma için biraz daha zaman tanı
-        } else {
-          console.warn('loadDocumentData - Doküman içeriği yok veya Quill/Delta kütüphaneleri yüklenemedi.');
-          // İçerik yoksa veya yüklenemediyse, boş bir sayfa ile başlat
-          if (this.pages.length === 0) {
-            this.pages = [{ id: this.generatePageId(), initialContent: { ops: [{ insert: '\n' }] } }];
-            this.changeDetector.detectChanges();
-            setTimeout(() => this.initializeVisiblePageEditors(), 50);
-          }
-        }
-      },
-      error: (err) => {
-        console.error("Doküman yüklenirken hata:", err);
-        alert(`Doküman yüklenirken bir sorun oluştu: ${err.message || err}`);
-        // Hata durumunda kullanıcıyı ana sayfaya yönlendirebilir veya boş bir editör sunabilirsiniz.
-        this.router.navigate(['/main-page']);
+  private initializeAutoSave(): void {
+    this.autoSaveSubscription = this.autoSaveSubject.pipe(
+      debounceTime(2500),
+      filter(() => this.isDirty && !!this.currentDocumentId),
+      tap(() => {
+        this.saveStatus = 'Kaydediliyor...';
+        this.changeDetector.detectChanges();
+      }),
+      switchMap(() => this._autoSaveDocument().pipe(
+        catchError((err) => {
+          this.saveStatus = 'Otomatik kaydetme hatası!';
+          this.isDirty = true;
+          this.changeDetector.detectChanges();
+          console.error("Otomatik kaydetme hatası:", err);
+          return of(null);
+        })
+      ))
+    ).subscribe(result => {
+      if (result) {
+        this.saveStatus = 'Tüm değişiklikler kaydedildi';
+        this.isDirty = false;
+        this.currentDocumentVersion = result.version ?? this.currentDocumentVersion;
+        this.changeDetector.detectChanges();
       }
     });
+  }
+
+  private _autoSaveDocument(): Observable<DocumentPayload | null> {
+    if (!this.currentDocumentId) {
+      return of(null);
+    }
+
+    const finalDelta = this.getCombinedDelta();
+    if (!finalDelta) return of(null);
+
+    return this.documentService.updateDocument(
+      this.currentDocumentId,
+      this.title ?? null,
+      this.currentDocumentDescription ?? null,
+      finalDelta,
+      this.currentDocumentIsPublic,
+      this.currentDocumentStatus ?? null
+    );
+  }
+
+  private getCombinedDelta(): QuillDelta | null {
+    const localDeltaConstructor = this.DeltaConstructor;
+    if (!localDeltaConstructor || !this.QuillLib) {
+      return null;
+    }
+
+    let combinedOps: Op[] = [];
+    const explicitPageBreakOp: Op = { insert: '\n', attributes: { 'explicitPageBreak': true } };
+
+    this.pages.forEach((page, index) => {
+      const instance = this.editorInstances.get(page.id);
+      const content = instance ? instance.getContents() : page.initialContent;
+      if (content && content.ops) {
+        combinedOps = combinedOps.concat(content.ops);
+        if (index < this.pages.length - 1) {
+          combinedOps.push(explicitPageBreakOp);
+        }
+      }
+    });
+
+    return { ops: combinedOps };
+  }
+
+
+  preventEnterKey(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement;
+    const currentText = target.innerText || '';
+    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'];
+    if (allowedKeys.includes(event.key)) return;
+    if (event.key === 'Enter' || currentText.length >= 50) {
+      event.preventDefault();
+    }
+  }
+
+  goBackToMainPage(): void {
+    if (this.isDirty) {
+      const userConfirmed = confirm('Kaydedilmemiş değişiklikler var. Yine de sayfadan ayrılmak istediğinize emin misiniz?');
+      if (userConfirmed) {
+        this.router.navigate(['/main-page']);
+      }
+    } else {
+      this.router.navigate(['/main-page']);
+    }
   }
 
   private generatePageId(): string {
@@ -223,75 +273,150 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private initializeVisiblePageEditors(): void {
     if (!isPlatformBrowser(this.platformId) || !this.QuillLib || !this.DeltaConstructor) {
-      console.warn('initializeVisiblePageEditors - Tarayıcı ortamı değil veya Quill/Delta yüklenemedi.');
       return;
     }
     const quillSourcesUser = this.QuillLib.sources.USER;
     const quillSourcesSilent = this.QuillLib.sources.SILENT;
 
-    console.log('initializeVisiblePageEditors - Başlatılıyor, sayfa sayısı:', this.pages.length);
-
     this.pages.forEach(page => {
       if (!this.editorInstances.has(page.id) && this.QuillLib && this.DeltaConstructor) {
         const container = document.getElementById(page.id);
         if (container) {
-          console.log(`initializeVisiblePageEditors - Quill örneği oluşturuluyor, sayfa ID: ${page.id}`);
+
           const editor = new this.QuillLib(container, {
             modules: {
-              toolbar: false, // ToolbarComponent kullanıldığı için false
-              history: { delay: 2000, maxStack: 500, userOnly: true }
+              toolbar: false,
+              history: { delay: 500, maxStack: 20, userOnly: true },
+              table: true,
+              'better-table': {
+                operationMenu: {
+                  items: {
+                    unmergeCells: { text: 'Unmerge cells' },
+                    toolTip: { text: 'Actions' }
+                  },
+                  color: {
+                    colors: ['#000000', '#ffffff', '#ff0000', '#008000'],
+                    text: 'Border Colors'
+                  }
+                }
+              }
             },
             placeholder: `Sayfa ${this.pages.findIndex(p => p.id === page.id) + 1} içeriği...`,
             theme: 'snow'
           });
 
           if (page.initialContent && page.initialContent.ops && page.initialContent.ops.length > 0) {
-            console.log(`initializeVisiblePageEditors - İçerik set ediliyor, sayfa ID: ${page.id}, içerik:`, JSON.stringify(page.initialContent));
-            // Delta'nın geçerli bir Quill Delta objesi olduğundan emin ol
             try {
               const deltaToSet = new this.DeltaConstructor(page.initialContent.ops);
-              editor.setContents(deltaToSet, quillSourcesSilent); // Başlangıç yüklemesi için SILENT kullanılabilir
-            } catch (deltaError) {
-              console.error(`initializeVisiblePageEditors - Hatalı Delta formatı, sayfa ID: ${page.id}`, deltaError, page.initialContent);
-              editor.setContents(new this.DeltaConstructor([{ insert: '\n' }]), quillSourcesSilent); // Hata durumunda boş içerik
-            }
-          } else {
-            console.log(`initializeVisiblePageEditors - Başlangıç içeriği boş veya tanımsız, sayfa ID: ${page.id}`);
-            // Opsiyonel: Eğer initialContent yoksa, yine de boş bir satırla başlatmak iyi olabilir.
-            editor.setContents(new this.DeltaConstructor([{ insert: '\n' }]), quillSourcesSilent);
-          }
+              editor.setContents(deltaToSet, quillSourcesSilent);
+            } catch (e) { }
+          } else { editor.setContents(new this.DeltaConstructor([{ insert: '\n' }]), quillSourcesSilent); }
+
           this.editorInstances.set(page.id, editor);
 
-          editor.on('editor-change', (eventName: string, ...args: any[]) => {
-            // ... (mevcut editor-change listener kodu) ...
+          editor.on('text-change', (delta: Delta, oldDelta: Delta, source: QuillSources) => {
+            if (source === quillSourcesUser) {
+              this.isDirty = true;
+              this.saveStatus = 'Kaydedilmemiş değişiklikler var';
+              if (!this.currentDocumentId) {
+                this.saveStatus = 'Kaydetmek için butona tıklayın';
+              } else {
+                this.autoSaveSubject.next();
+              }
+              this.lastKnownSelection = { editorId: page.id, range: editor.getSelection(true) as QuillRange };
+              this.updateCurrentSelectionFormatState(editor, this.lastKnownSelection.range);
+              this._scheduleOverflowCheck(page.id, editor);
+              this.scheduleReflowCheck(page.id, editor);
+
+              const currentPageId = page.id;
+              const editorContentLength = editor.getLength();
+              const currentPageIndex = this.pages.findIndex(p => p.id === currentPageId);
+
+              if (editorContentLength <= 1 && currentPageIndex > 0) {
+                setTimeout(() => {
+                  if (currentPageIndex > 0 && this.pages[currentPageIndex - 1]) {
+                    const previousPageId = this.pages[currentPageIndex - 1].id;
+                    const previousEditorInstance = this.editorInstances.get(previousPageId);
+
+                    if (previousEditorInstance && this.QuillLib) {
+                      const prevEditorLength = previousEditorInstance.getLength();
+                      const targetSelectionIndex = prevEditorLength > 0 ? prevEditorLength - 1 : 0;
+
+                      this.activeEditorInstanceId = previousPageId;
+                      previousEditorInstance.setSelection(targetSelectionIndex, 0, this.QuillLib.sources.USER);
+                      previousEditorInstance.focus();
+                      this.changeDetector.detectChanges();
+
+                      this.removePage(currentPageId);
+                    } else {
+                      this.removePage(currentPageId);
+                    }
+                  } else {
+                    this.removePage(currentPageId);
+                  }
+                }, 0);
+
+                return;
+              }
+            }
           });
 
-        } else {
-          console.error(`initializeVisiblePageEditors - Sayfa konteyneri bulunamadı, ID: ${page.id}`);
-        }
+          editor.on('selection-change', (range: QuillRange | null, oldRange: QuillRange | null, source: QuillSources) => {
+            if (range) {
+              this.activeEditorInstanceId = page.id;
+              if (source === 'user') {
+                this.lastKnownSelection = { editorId: page.id, range: range };
+              }
+              this.updateCurrentSelectionFormatState(editor, range);
+
+              if (range.length > 0) {
+                this.activeTypingFormats = {};
+              } else {
+                if (Object.keys(this.activeTypingFormats).length > 0) {
+                  for (const key in this.activeTypingFormats) {
+                    editor.format(key, this.activeTypingFormats[key], 'silent');
+                  }
+                }
+              }
+            }
+
+            if (range && editor.hasFocus()) {
+              this.activeEditorInstanceId = page.id;
+            }
+          });
+        } else { }
       }
     });
-
     if (!this.activeEditorInstanceId && this.pages.length > 0) {
       const firstPageId = this.pages[0].id;
-      if (this.editorInstances.has(firstPageId)) {
-        this.activeEditorInstanceId = firstPageId;
-        console.log(`initializeVisiblePageEditors - Aktif editör ID set edildi: ${firstPageId}`);
-      }
+      if (this.editorInstances.has(firstPageId)) { this.activeEditorInstanceId = firstPageId; }
     }
-    this.changeDetector.detectChanges(); // Quill editörleri DOM'a eklendikten sonra view'ı güncelle
+    this.changeDetector.detectChanges();
+  }
+
+  handleInsertTable(size?: { rows: number, cols: number }): void {
+    const editor = this.getEditorToFormat();
+    if (editor) {
+      const tableModule = editor.getModule('better-table') as BetterTableModule;
+
+      const rows = size ? size.rows : 3;
+      const cols = size ? size.cols : 3;
+
+      tableModule.insertTable(rows, cols);
+    }
   }
 
   updateCurrentSelectionFormatState(editor: Quill, range: QuillRange | null): void {
     let formats = {};
     if (range) {
       formats = editor.getFormat(range);
+
       if (range.length > 0) {
+        const selectedDelta = editor.getContents(range.index, range.length);
         let commonSize: string | 'MIXED_VALUES' | undefined | null = undefined;
         let firstOp = true;
-        const selectedDelta = editor.getContents(range.index, range.length);
 
-        for (const op of selectedDelta.ops) { // `as Op[]` cast'i DTO doğruysa gereksiz
+        for (const op of selectedDelta.ops) {
           const opSize: any = op.attributes?.['size'];
           if (firstOp) {
             commonSize = opSize;
@@ -306,12 +431,11 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
           (formats as any)['size'] = 'MIXED_VALUES';
         } else if (commonSize != null) {
           (formats as any)['size'] = commonSize;
-        } else {
-          delete (formats as any)['size'];
         }
       }
     }
     this.currentSelectionFormatState = { ...formats };
+
     this.changeDetector.detectChanges();
   }
 
@@ -334,61 +458,59 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     const localQuillLib = this.QuillLib;
 
     if (editorToFormat && localQuillLib) {
-      let targetRange = (this.lastKnownSelection?.editorId === editorToFormat.root.id)
-        ? this.lastKnownSelection.range
-        : editorToFormat.getSelection();
+      this.activeTypingFormats[formatKey] = value;
 
-      if (!targetRange && editorToFormat.hasFocus()) {
-        targetRange = editorToFormat.getSelection();
-      }
+      editorToFormat.focus();
 
-      if (targetRange) {
-        if (targetRange.length > 0) {
-          editorToFormat.formatText(targetRange.index, targetRange.length, formatKey, value, localQuillLib.sources.USER);
-        } else {
+      setTimeout(() => {
+        const currentSelection = editorToFormat.getSelection();
+
+        if (currentSelection) {
+          if (currentSelection.length > 0) {
+            editorToFormat.formatText(currentSelection.index, currentSelection.length, formatKey, value, localQuillLib.sources.USER);
+          } else {
+            editorToFormat.format(formatKey, value, localQuillLib.sources.USER);
+          }
+          this.updateCurrentSelectionFormatState(editorToFormat, editorToFormat.getSelection());
+        } else if (this.lastKnownSelection?.editorId === editorToFormat.root.id) {
           editorToFormat.format(formatKey, value, localQuillLib.sources.USER);
+          this.updateCurrentSelectionFormatState(editorToFormat, this.lastKnownSelection.range);
         }
-      } else {
-        console.warn('No active editor or selection to apply format.');
-      }
-      const currentSelectionAfterFormat = editorToFormat.getSelection();
-      if (currentSelectionAfterFormat) {
-        this.updateCurrentSelectionFormatState(editorToFormat, currentSelectionAfterFormat);
-      }
-    } else {
-      console.warn('No target editor found or QuillLib not loaded to apply format.');
+        this.changeDetector.detectChanges();
+      }, 0);
     }
   }
 
   private getEditorToFormat(): Quill | null {
-    if (!isPlatformBrowser(this.platformId)) return null;
-
-    const lastSelectedEditorId = this.lastKnownSelection?.editorId;
-    if (lastSelectedEditorId) {
-      const editor = this.editorInstances.get(lastSelectedEditorId);
-      if (editor && editor.hasFocus()) return editor;
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
     }
 
-    if (this.activeEditorInstanceId) {
-      const editor = this.editorInstances.get(this.activeEditorInstanceId);
-      if (editor && editor.hasFocus()) return editor;
+    if (this.lastKnownSelection?.editorId) {
+      const editor = this.editorInstances.get(this.lastKnownSelection.editorId);
+      if (editor) {
+        return editor;
+      }
     }
 
-    for (const [id, editor] of this.editorInstances) {
+    for (const [_id, editor] of this.editorInstances) {
       if (editor.hasFocus()) {
-        this.activeEditorInstanceId = id;
+        this.activeEditorInstanceId = _id;
         return editor;
       }
     }
 
     if (this.activeEditorInstanceId) {
       const editor = this.editorInstances.get(this.activeEditorInstanceId);
-      if (editor) return editor;
+      if (editor) {
+        return editor;
+      }
     }
 
     if (this.editorInstances.size > 0) {
       return this.editorInstances.values().next().value || null;
     }
+
     return null;
   }
 
@@ -459,7 +581,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     const editorContentHeight = editorRoot.scrollHeight;
     const currentPageIndex = this.pages.findIndex(p => p.id === currentPageId);
 
-    if (currentPageIndex < this.pages.length - 1 && editorContentHeight < this.PAGE_CONTENT_TARGET_HEIGHT_PX * 0.7) {
+    if (currentPageIndex < this.pages.length - 1 && editorContentHeight < this.PAGE_CONTENT_TARGET_HEIGHT_PX * 0.1) {
       const nextPageId = this.pages[currentPageIndex + 1].id;
       const nextPageEditor = this.editorInstances.get(nextPageId);
 
@@ -529,73 +651,218 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private removePage(pageId: string): void {
     const pageIndex = this.pages.findIndex(p => p.id === pageId);
+
     if (pageIndex > -1 && this.pages.length > 1) {
       this.pages.splice(pageIndex, 1);
       this.editorInstances.delete(pageId);
-      this.changeDetector.detectChanges();
-      if (this.activeEditorInstanceId === pageId || !this.editorInstances.has(this.activeEditorInstanceId!)) {
-        const newActiveId = this.pages[Math.max(0, pageIndex - 1)]?.id || this.pages[0]?.id || null;
-        this.activeEditorInstanceId = newActiveId;
-        if (newActiveId) {
-          this.editorInstances.get(newActiveId)?.focus();
+
+      let newActiveFocusIsNeeded = false;
+
+      if (this.activeEditorInstanceId === pageId) {
+        newActiveFocusIsNeeded = true;
+      } else if (!this.activeEditorInstanceId || !this.editorInstances.has(this.activeEditorInstanceId)) {
+        newActiveFocusIsNeeded = true;
+      }
+
+      if (newActiveFocusIsNeeded) {
+        const newActivePageIndex = Math.max(0, pageIndex - 1);
+        const newActivePage = this.pages[newActivePageIndex];
+
+        if (newActivePage && newActivePage.id) {
+          this.activeEditorInstanceId = newActivePage.id;
+          const editorToFocus = this.editorInstances.get(newActivePage.id);
+          if (editorToFocus && this.QuillLib) {
+            setTimeout(() => {
+              const len = editorToFocus.getLength();
+              const targetSelection = len > 0 ? len - 1 : 0;
+              editorToFocus.setSelection(targetSelection, 0, this.QuillLib!.sources.USER);
+              editorToFocus.focus();
+              this.changeDetector.detectChanges();
+            }, 0);
+          } else {
+            this.activeEditorInstanceId = null;
+          }
+        } else {
+          this.activeEditorInstanceId = this.pages.length > 0 ? this.pages[0].id : null;
+          if (this.activeEditorInstanceId) {
+            setTimeout(() => this.editorInstances.get(this.activeEditorInstanceId!)?.focus(), 0);
+          }
+        }
+      } else {
+        const currentActiveEditor = this.editorInstances.get(this.activeEditorInstanceId!);
+        if (currentActiveEditor) {
+          if (!currentActiveEditor.hasFocus()) {
+            setTimeout(() => {
+              currentActiveEditor.focus();
+              this.changeDetector.detectChanges();
+            }, 0);
+          }
+        } else {
+          if (this.pages.length > 0) {
+            this.activeEditorInstanceId = this.pages[0].id;
+            setTimeout(() => this.editorInstances.get(this.activeEditorInstanceId!)?.focus(), 0);
+          } else {
+            this.activeEditorInstanceId = null;
+          }
         }
       }
+      this.changeDetector.detectChanges();
+    } else if (pageIndex > -1 && this.pages.length === 1 && this.pages[0].id === pageId) {
     }
   }
 
-  private async _checkAndHandlePageOverflow(currentPageId: string, currentEditor: Quill): Promise<void> {
-    if (!this.QuillLib || !this.DeltaConstructor || this.PAGE_CONTENT_TARGET_HEIGHT_PX <= 0 || !currentEditor.root) return;
 
-    const editorRoot = currentEditor.root as HTMLElement;
+  private getFittingCharsInBlotHeuristic(
+    editor: Quill,
+    blot: any,
+    availableHeightPx: number,
+    blotDomNode: HTMLElement
+  ): number {
+    if (availableHeightPx <= 0) return 0;
+
+    const blotFullHeight = blotDomNode.offsetHeight;
+    const blotQuillLength = blot.length() - 1;
+    if (blotFullHeight <= availableHeightPx + 5) {
+      return blotQuillLength;
+    }
+
+    const fitRatio = Math.max(0, Math.min(1, availableHeightPx / blotFullHeight));
+    let estimatedChars = Math.floor(blotQuillLength * fitRatio);
+    if (estimatedChars > 0 && estimatedChars < blotQuillLength) {
+      const blotText = editor.getText(editor.getIndex(blot), blotQuillLength);
+      let adjustedChars = estimatedChars;
+
+      while (adjustedChars > 0 && blotText[adjustedChars - 1] !== ' ' && blotText[adjustedChars - 1] !== '\n') {
+        adjustedChars--;
+      }
+
+      if (adjustedChars > 0) {
+        return adjustedChars;
+      } else {
+        const approxLineHeight = parseFloat(window.getComputedStyle(blotDomNode).lineHeight) || 20;
+        if (availableHeightPx < approxLineHeight * 0.8) {
+          return 0;
+        }
+        return estimatedChars;
+      }
+    } else if (estimatedChars <= 0) {
+      return 0;
+    }
+    return estimatedChars;
+  }
+
+  private async _checkAndHandlePageOverflow(currentPageId: string, currentEditor: Quill): Promise<void> {
+    if (!this.QuillLib || !this.DeltaConstructor || this.PAGE_CONTENT_TARGET_HEIGHT_PX <= 0 || !currentEditor.root) {
+      return;
+    }
+
+    let editorRoot = currentEditor.root as HTMLElement;
     let editorContentHeight = editorRoot.scrollHeight;
+    let initialOverflowDetectedOnEntry = editorContentHeight > this.PAGE_CONTENT_TARGET_HEIGHT_PX;
 
     while (editorContentHeight > this.PAGE_CONTENT_TARGET_HEIGHT_PX && currentEditor.getLength() > 1) {
-      let splitIndex = 0;
-      const linesIterator: Iterable<any> = currentEditor.scroll.lines();
-      let lastLineBlotBeforeOverflow: any = null;
 
+      let determinedSplitIndex = -1;
+      let lastLineBlotThatFits: any = null;
+      let firstLineBlotThatOverlaps: any = null;
+      const linesIterator: Iterable<any> = currentEditor.scroll.lines();
       for (const lineBlot of linesIterator) {
         const lineNode = lineBlot.domNode as HTMLElement;
         if (!lineNode) continue;
-        const lineBottomInEditor = lineNode.offsetTop + lineNode.offsetHeight;
-
-        if (lineBottomInEditor <= this.PAGE_CONTENT_TARGET_HEIGHT_PX) {
-          lastLineBlotBeforeOverflow = lineBlot;
+        const lineTop = lineNode.offsetTop;
+        const lineBottom = lineTop + lineNode.offsetHeight;
+        if (lineBottom <= this.PAGE_CONTENT_TARGET_HEIGHT_PX) {
+          lastLineBlotThatFits = lineBlot;
         } else {
-          if (lastLineBlotBeforeOverflow) {
-            splitIndex = currentEditor.getIndex(lastLineBlotBeforeOverflow) + lastLineBlotBeforeOverflow.length();
-          } else {
-            splitIndex = currentEditor.getIndex(lineBlot);
-            if (splitIndex === 0 && lineBlot.length() < currentEditor.getLength() - 1) {
-              splitIndex = lineBlot.length();
-            } else if (splitIndex === 0 && lineBlot.length() >= currentEditor.getLength() - 1) {
-              console.warn("Single very long line overflows, cannot split effectively.");
-              return;
-            }
-          }
+          firstLineBlotThatOverlaps = lineBlot;
           break;
         }
       }
-      if (splitIndex === 0 && editorContentHeight > this.PAGE_CONTENT_TARGET_HEIGHT_PX && lastLineBlotBeforeOverflow) {
-        splitIndex = currentEditor.getIndex(lastLineBlotBeforeOverflow) + lastLineBlotBeforeOverflow.length();
+      if (firstLineBlotThatOverlaps) {
+        const baseIndexOfOverlappingBlot = currentEditor.getIndex(firstLineBlotThatOverlaps);
+        const domNodeOfOverlappingBlot = firstLineBlotThatOverlaps.domNode as HTMLElement;
+        let availableHeightForThisBlot: number;
+        if (lastLineBlotThatFits) {
+          const endOfLastFitBlotY = (lastLineBlotThatFits.domNode as HTMLElement).offsetTop + (lastLineBlotThatFits.domNode as HTMLElement).offsetHeight;
+          availableHeightForThisBlot = this.PAGE_CONTENT_TARGET_HEIGHT_PX - endOfLastFitBlotY;
+        } else {
+          availableHeightForThisBlot = this.PAGE_CONTENT_TARGET_HEIGHT_PX - domNodeOfOverlappingBlot.offsetTop;
+        }
+        let charsToKeepInOverlappingBlot = this.getFittingCharsInBlotHeuristic(currentEditor, firstLineBlotThatOverlaps, availableHeightForThisBlot, domNodeOfOverlappingBlot);
+        if (charsToKeepInOverlappingBlot === 0 && !lastLineBlotThatFits && firstLineBlotThatOverlaps.length() >= currentEditor.getLength() - 1) {
+          return;
+        }
+        determinedSplitIndex = baseIndexOfOverlappingBlot + charsToKeepInOverlappingBlot;
+      } else if (lastLineBlotThatFits) {
+        determinedSplitIndex = currentEditor.getIndex(lastLineBlotThatFits) + lastLineBlotThatFits.length();
+        if (determinedSplitIndex >= currentEditor.getLength() - 1 && editorContentHeight > this.PAGE_CONTENT_TARGET_HEIGHT_PX) {
+          break;
+        }
+      } else {
+        break;
       }
+      if (determinedSplitIndex >= 0 && determinedSplitIndex < currentEditor.getLength()) {
+        const originalOverflowLength = currentEditor.getLength() - determinedSplitIndex;
+        const originalOverflowContents = currentEditor.getContents(determinedSplitIndex, originalOverflowLength);
+        let originalOverflowOps = originalOverflowContents.ops;
+        if (!originalOverflowOps || originalOverflowOps.length === 0) {
+          break;
+        }
+        let opsForNextPage = JSON.parse(JSON.stringify(originalOverflowOps)) as Op[];
+        let leadingNewlineTrimmed = false;
+        let trailingNewlineTrimmed = false;
+        if (opsForNextPage.length > 0 && opsForNextPage[0] && typeof opsForNextPage[0].insert === 'string' && (opsForNextPage[0].insert as string).startsWith('\n')) {
+          const firstOpInsertStr = opsForNextPage[0].insert as string;
+          if (firstOpInsertStr === '\n') {
+            if (Object.keys(opsForNextPage[0].attributes || {}).length === 0) {
+              opsForNextPage.shift(); leadingNewlineTrimmed = true;
+            }
+          } else {
+            opsForNextPage[0].insert = firstOpInsertStr.substring(1); leadingNewlineTrimmed = true;
+          }
+        }
+        while (opsForNextPage.length > 0) {
+          const lastOpIndex = opsForNextPage.length - 1;
+          const lastOp = opsForNextPage[lastOpIndex];
 
-      if (splitIndex > 0 && splitIndex < currentEditor.getLength() - 1) {
-        const overflowOps = currentEditor.getContents(splitIndex).ops;
-        if (!overflowOps || overflowOps.length === 0) return; // DeltaConstructor kontrolü gereksiz
-        const overflowDelta: QuillDelta = { ops: overflowOps };
+          if (lastOp && typeof lastOp.insert === 'string') {
+            let opInsertStr = lastOp.insert as string;
+            if (opInsertStr.endsWith('\n')) {
+              opInsertStr = opInsertStr.substring(0, opInsertStr.length - 1);
+              opsForNextPage[lastOpIndex].insert = opInsertStr;
+              trailingNewlineTrimmed = true;
+              if (opInsertStr.length === 0 && Object.keys(lastOp.attributes || {}).length === 0) {
+                opsForNextPage.pop();
+              }
+            } else {
+              break;
+            }
+          } else {
+            break;
+          }
+        }
 
-        currentEditor.deleteText(splitIndex, currentEditor.getLength() - splitIndex, this.QuillLib.sources.SILENT);
-
+        const lengthToDelete = new this.DeltaConstructor(originalOverflowOps).length();
+        currentEditor.deleteText(determinedSplitIndex, lengthToDelete, this.QuillLib.sources.SILENT);
+        if (opsForNextPage.length === 0 && (leadingNewlineTrimmed || trailingNewlineTrimmed)) {
+          editorContentHeight = (currentEditor.root as HTMLElement).scrollHeight;
+          if (editorContentHeight <= this.PAGE_CONTENT_TARGET_HEIGHT_PX) {
+            break;
+          }
+          continue;
+        }
+        const overflowDeltaForNextPage: QuillDelta = { ops: opsForNextPage };
         const currentPageIndex = this.pages.findIndex(p => p.id === currentPageId);
-        if (currentPageIndex === -1) return;
-
+        if (currentPageIndex === -1) {
+          return;
+        }
         let nextPageId: string;
         let nextPageEditor: Quill | undefined;
-
+        let isNewPageCreated = false;
         if (currentPageIndex === this.pages.length - 1) {
           nextPageId = this.generatePageId();
           this.pages.push({ id: nextPageId, initialContent: { ops: [] } });
+          isNewPageCreated = true;
           this.changeDetector.detectChanges();
           await new Promise(resolve => setTimeout(resolve, 50));
           this.initializeVisiblePageEditors();
@@ -606,15 +873,46 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         if (nextPageEditor && this.DeltaConstructor && this.QuillLib) {
-          const currentNextPageContentOps = nextPageEditor.getContents().ops;
-          const newDelta = new this.DeltaConstructor(overflowDelta.ops).concat(new this.DeltaConstructor(currentNextPageContentOps));
-          nextPageEditor.setContents(newDelta, this.QuillLib.sources.SILENT);
-          await this._checkAndHandlePageOverflow(nextPageId, nextPageEditor);
+          if (overflowDeltaForNextPage.ops && overflowDeltaForNextPage.ops.length > 0) {
+            const currentNextPageContentBeforeInsert = nextPageEditor.getContents();
+            const newDeltaForNextPage = new this.DeltaConstructor(overflowDeltaForNextPage.ops)
+              .concat(currentNextPageContentBeforeInsert);
+            nextPageEditor.setContents(newDeltaForNextPage, this.QuillLib.sources.SILENT);
+          }
+
+          const shouldFocusAndScroll = (isNewPageCreated || initialOverflowDetectedOnEntry) && (overflowDeltaForNextPage.ops && overflowDeltaForNextPage.ops.length > 0);
+          if (shouldFocusAndScroll) {
+            const newPageElement = document.getElementById(nextPageId);
+            if (newPageElement) {
+              this.activeEditorInstanceId = nextPageId;
+              nextPageEditor.focus();
+
+              const effectivelyMovedContentDelta = new this.DeltaConstructor(overflowDeltaForNextPage.ops);
+              let targetCursorIndex = effectivelyMovedContentDelta.length();
+              targetCursorIndex = Math.max(0, targetCursorIndex);
+
+              nextPageEditor.setSelection(targetCursorIndex, 0, this.QuillLib.sources.USER);
+              newPageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              this.changeDetector.detectChanges();
+            }
+          }
+          initialOverflowDetectedOnEntry = false;
+
+          if (overflowDeltaForNextPage.ops.length > 0) {
+            await this._checkAndHandlePageOverflow(nextPageId, nextPageEditor);
+          }
+        } else {
+          return;
         }
       } else {
         break;
       }
+      await new Promise(resolve => setTimeout(resolve, 0));
+      editorRoot = currentEditor.root as HTMLElement;
       editorContentHeight = editorRoot.scrollHeight;
+      if (editorContentHeight <= this.PAGE_CONTENT_TARGET_HEIGHT_PX) {
+        break;
+      }
     }
   }
 
@@ -625,7 +923,6 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     const localDeltaConstructor = this.DeltaConstructor;
 
     if (!localQuillLib || !localDeltaConstructor) {
-      console.error("QuillLib or DeltaConstructor not initialized for handleNew");
       return;
     }
     if (confirm('Emin misiniz? Bu işlem tüm dökümanı temizler ve geri alınamaz.')) {
@@ -642,7 +939,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       this.currentDocumentStatus = 'draft';
       this.currentDocumentOwnerId = null;
 
-      this.pages = [{ id: this.generatePageId(), initialContent: { ops: [{ insert: '\n' }] } }];
+      this.pages = [{ id: this.generatePageId(), initialContent: { ops: [{ insert: ' ' }] } }];
       this.updateTitleInDOM();
       this.changeDetector.detectChanges();
       setTimeout(() => {
@@ -656,106 +953,161 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   handleSave(): void {
-    const localDeltaConstructor = this.DeltaConstructor;
-    if (!localDeltaConstructor || !this.QuillLib) {
-      console.error("Hata: Quill kütüphanesi yüklenemedi veya DeltaConstructor başlatılamadı.");
-      alert("Kaydetme işlemi için gerekli bileşenler yüklenemedi. Lütfen sayfayı yenileyin.");
+    const finalDelta = this.getCombinedDelta();
+    if (!finalDelta) {
+      alert("Kaydedilecek içerik oluşturulamadı.");
       return;
     }
 
-    let fullDeltaOps: Op[] = [];
-    this.pages.forEach((page) => {
-      const instance = this.editorInstances.get(page.id);
-      if (instance) {
-        const contents = instance.getContents();
-        if (contents && contents.ops) {
-          fullDeltaOps = fullDeltaOps.concat(contents.ops);
-        }
-      }
-    });
-
-    const finalDelta: QuillDelta = { ops: fullDeltaOps };
+    this.saveStatus = 'Kaydediliyor...';
+    this.changeDetector.detectChanges();
 
     if (this.currentDocumentId) {
-      // Mevcut dokümanı güncelle
+      // --- VAR OLAN DOKÜMANI GÜNCELLE ---
+      // ÇÖZÜM: Argümanların undefined olması durumunda null gönderilmesini sağlıyoruz.
       this.documentService.updateDocument(
         this.currentDocumentId,
-        this.title,
-        this.currentDocumentDescription,
+        this.title ?? null,
+        this.currentDocumentDescription ?? null,
         finalDelta,
         this.currentDocumentIsPublic,
-        this.currentDocumentStatus
+        this.currentDocumentStatus ?? null
       ).subscribe({
         next: (updatedDoc: DocumentPayload) => {
-          alert('Döküman başarıyla güncellendi!');
+          this.isDirty = false;
+          this.saveStatus = 'Tüm değişiklikler kaydedildi';
           this.currentDocumentVersion = updatedDoc.version ?? this.currentDocumentVersion;
+          this.changeDetector.detectChanges();
         },
         error: (err) => {
+          this.saveStatus = 'Kaydetme hatası!';
+          this.changeDetector.detectChanges();
           console.error("Döküman güncellenirken hata:", err);
-          const errorMessage = typeof err === 'string' ? err : (err.message || "Bilinmeyen bir hata oluştu.");
-          alert(`Döküman güncellenirken bir sorun oluştu: ${errorMessage}`);
+          alert(`Güncelleme hatası: ${err.message}`);
         }
       });
     } else {
-      // Yeni doküman oluştur
+      // --- YENİ DOKÜMAN OLUŞTUR ---
       this.documentService.createDocument(
-        this.title,
-        this.currentDocumentDescription,
-        finalDelta,
-        this.currentDocumentIsPublic
+        this.title, this.currentDocumentDescription, finalDelta, this.currentDocumentIsPublic
       ).subscribe({
         next: (createdDoc: DocumentPayload) => {
-          console.log('DocumentService.createDocument başarılı, yanıt:', createdDoc);
-          // Yanıtın ve ID'nin geçerli olduğunu kontrol et
-          if (createdDoc && createdDoc.id && typeof createdDoc.id === 'string') {
+          if (createdDoc && createdDoc.id) {
+            this.isDirty = false;
+            this.saveStatus = 'Tüm değişiklikler kaydedildi';
             this.currentDocumentId = createdDoc.id;
             this.currentDocumentVersion = createdDoc.version ?? 1;
-            this.currentDocumentOwnerId = createdDoc.owner_id ?? null;
-            this.currentDocumentIsPublic = createdDoc.is_public ?? false;
-            this.currentDocumentStatus = createdDoc.status ?? 'draft';
-            this.currentDocumentDescription = createdDoc.description ?? '';
-            this.title = createdDoc.title; // Başlığı da API'den gelenle güncelle
-            this.updateTitleInDOM(); // DOM'daki başlığı da güncelle
-
-            // Başarılı oluşturma sonrası dokümanın kendi sayfasına yönlendir
-            // Bu, URL'yi güncelleyecek ve DocumentComponent'in veriyi ID ile yeniden yüklemesini tetikleyebilir (eğer route subscribe ediliyorsa)
-            // veya kullanıcı sayfada kalmaya devam eder ve mevcut component state güncellenir.
-            this.router.navigate(['/document', createdDoc.id], { replaceUrl: true }).then(navSuccess => {
-              if (navSuccess) {
-                console.log('Yeni dokümana yönlendirildi (veya URL güncellendi):', createdDoc.id);
-                // Yönlendirme sonrası loadDocumentData'nın çağrıldığından emin olmak için
-                // ngOnInit içinde veya route değişikliklerini dinleyen bir yapıda bu mantık olmalı.
-                // Şimdilik sadece state'i güncelledik ve URL'yi değiştirdik.
-                // Eğer component aynı kalıyorsa ve yeniden başlatılmıyorsa,
-                // this.loadDocumentData(createdDoc.id); // gibi bir çağrı gerekebilir.
-                // Ancak route değiştiği için Angular genellikle component'i yeniden başlatır veya
-                // ActivatedRoute.paramMap aboneliği tetiklenir.
-              } else {
-                console.error('Yeni doküman URL\'sine yönlendirme/güncelleme başarısız oldu.');
-                alert('Döküman oluşturuldu ancak sayfa güncellenirken bir sorun oluştu.');
-              }
-            }).catch(navError => {
-              console.error('Yönlendirme/URL güncelleme hatası:', navError);
-              alert('Döküman oluşturuldu ancak sayfa güncellenirken bir navigasyon hatası oluştu.');
-            });
-          } else {
-            console.error("Döküman oluşturuldu ancak sunucudan dönen yanıtta geçerli bir ID bulunamadı veya diğer zorunlu alanlar eksik:", createdDoc);
-            alert("Döküman oluşturuldu ancak sunucudan eksik veya hatalı bilgi döndü. Lütfen durumu kontrol edin.");
+            this.currentDocumentOwnerId = createdDoc.owner_id ?? null; // undefined kontrolü
+            this.currentDocumentIsPublic = createdDoc.is_public ?? false; // undefined kontrolü
+            this.changeDetector.detectChanges();
+            this.router.navigate(['/document', createdDoc.id], { replaceUrl: true });
+            alert('Döküman başarıyla oluşturuldu!');
           }
         },
         error: (err) => {
-          console.error("Döküman oluşturulurken hata (servis subscribe error bloğu):", err);
-          // Hata mesajını err objesinden almaya çalış
-          let userMessage = "Bilinmeyen bir hata oluştu.";
-          if (err && typeof err === 'object' && err.message) {
-            userMessage = err.message;
-          } else if (typeof err === 'string') {
-            userMessage = err;
-          }
-          alert(`Doküman oluşturulurken bir sorun oluştu: ${userMessage}. Detaylar için konsolu kontrol edin.`);
+          this.saveStatus = 'Kaydetme hatası!';
+          this.changeDetector.detectChanges();
+          console.error("Döküman oluşturulurken hata:", err);
+          alert(`Oluşturma hatası: ${err.message}`);
         }
       });
     }
+  }
+
+
+  applyColor(color: string): void {
+    this.applyFormat('color', color);
+  }
+
+  private async loadDocumentData(docId: string): Promise<void> {
+    this.documentService.getDocument(docId).subscribe({
+      next: async (doc: DocumentPayload) => {
+        this.title = doc.title;
+        this.currentDocumentId = doc.id ?? null;
+        this.currentDocumentVersion = doc.version ?? 1;
+        this.currentDocumentOwnerId = doc.owner_id ?? null;
+        this.currentDocumentIsPublic = doc.is_public ?? false;
+        this.currentDocumentStatus = doc.status ?? 'draft';
+        this.currentDocumentDescription = doc.description ?? '';
+        this.updateTitleInDOM();
+
+        if (doc.content && doc.content.ops && this.DeltaConstructor && this.QuillLib) {
+          this.editorInstances.forEach(editor => editor.disable());
+          this.editorInstances.clear();
+          this.pages = [];
+          this.activeEditorInstanceId = null;
+          this.changeDetector.detectChanges();
+
+          let currentOpsForPage: Op[] = [];
+          const allOps = doc.content.ops;
+
+          for (let i = 0; i < allOps.length; i++) {
+            const op = allOps[i];
+            if (op.insert === '\n' && op.attributes && op.attributes['explicitPageBreak'] === true) {
+              this.pages.push({
+                id: this.generatePageId(),
+                initialContent: { ops: currentOpsForPage.length > 0 ? currentOpsForPage : [{ insert: '\n' }] }
+              });
+              currentOpsForPage = [];
+            } else {
+              currentOpsForPage.push(op);
+            }
+          }
+          if (currentOpsForPage.length > 0 || this.pages.length === 0) {
+            this.pages.push({
+              id: this.generatePageId(),
+              initialContent: { ops: currentOpsForPage.length > 0 ? currentOpsForPage : [{ insert: '\n' }] }
+            });
+          }
+          if (this.pages.length === 0) {
+            this.pages.push({ id: this.generatePageId(), initialContent: { ops: [{ insert: '\n' }] } });
+          }
+
+          this.changeDetector.detectChanges();
+
+          await new Promise(resolve => setTimeout(resolve, 50));
+          this.initializeVisiblePageEditors();
+
+          if (this.pages.length > 0) {
+            this.activeEditorInstanceId = this.pages[0].id;
+            this.editorInstances.get(this.pages[0].id)?.focus();
+          }
+
+          if (!this.currentlyCheckingOverflow) {
+            this.currentlyCheckingOverflow = true;
+            try {
+              for (const page of this.pages) {
+                const editor = this.editorInstances.get(page.id);
+                if (editor) {
+                  await new Promise(resolve => setTimeout(resolve, 30));
+                  const editorRoot = editor.root as HTMLElement;
+                  if (editor.getLength() > 1 && editorRoot.scrollHeight > this.PAGE_CONTENT_TARGET_HEIGHT_PX) {
+                    await this._checkAndHandlePageOverflow(page.id, editor);
+                  }
+                }
+              }
+              const editorToFocus = this.activeEditorInstanceId ? this.editorInstances.get(this.activeEditorInstanceId) : (this.pages.length > 0 ? this.editorInstances.get(this.pages[0].id) : null);
+              editorToFocus?.focus();
+            } catch (e) {
+            } finally {
+              this.currentlyCheckingOverflow = false;
+            }
+          }
+        } else {
+          if (this.pages.length === 0) {
+            this.pages = [{ id: this.generatePageId(), initialContent: { ops: [{ insert: '\n' }] } }];
+            this.changeDetector.detectChanges();
+            await new Promise(resolve => setTimeout(resolve, 50));
+            this.initializeVisiblePageEditors();
+            if (this.pages.length > 0) this.editorInstances.get(this.pages[0].id)?.focus();
+          }
+        }
+      },
+      error: (err) => {
+        alert(`Doküman yüklenirken bir sorun oluştu: ${err.message || err}`);
+        this.goBackToMainPage();
+      }
+    });
   }
 
   handlePrint(): void { if (isPlatformBrowser(this.platformId)) window.print(); }
@@ -779,7 +1131,16 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   updateTitle(event: any): void {
     const newTitle = event.target.innerText.trim();
-    this.title = newTitle || 'Adsız Döküman';
+    if (this.title !== newTitle) {
+      this.title = newTitle || 'Adsız Döküman';
+      this.isDirty = true;
+      this.saveStatus = 'Kaydedilmemiş değişiklikler var';
+      if (this.currentDocumentId) {
+        this.autoSaveSubject.next();
+      } else {
+        this.saveStatus = 'Kaydetmek için butona tıklayın';
+      }
+    }
     if (!newTitle && event.target.innerText.trim() !== this.title) {
       event.target.innerText = this.title;
     }

@@ -1,4 +1,3 @@
-/* document.component.scss */
 .document-editor {
   display: flex;
   flex-direction: column;
@@ -9,6 +8,8 @@
 }
 
 .document-header {
+  display: flex;
+  align-items: center;
   padding: 10px 20px;
   background: #ffffff;
   border-bottom: 1px solid #e0e0e0;
@@ -43,26 +44,26 @@
 .pages-container {
   flex-grow: 1;
   overflow-y: auto;
-  background-color: #d0d0d0; // Arka plan, sayfalar arasında görünür
-  padding: 20px 0; // İlk ve son sayfa için üst/alt padding
+  background-color: #d0d0d0;
+  padding: 20px 0;
   box-sizing: border-box;
-  display: flex; /* Sayfaları dikeyde sıralamak ve ortalamak için */
-  flex-direction: column; /* Sayfaları dikeyde sıralar */
-  align-items: center; /* Sayfaları yatayda ortalar */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .document-page-wrapper {
-  margin: 0 0 20px 0; // Alt boşluk, yatayda ortalamayı pages-container yapar
+  margin: 0 0 20px 0;
   width: 8.5in;
-  max-width: calc(100% - 40px); // Dar ekranlarda taşmayı önle
-  min-height: 11in; // Kağıt yüksekliği
+  max-width: calc(100% - 40px);
+  min-height: 11in;
   background: white;
   box-shadow: 0 1px 5px rgba(0,0,0,0.3);
   box-sizing: border-box;
   position: relative;
-  padding: 1in; // Sayfa kenar boşlukları
-  display: flex; // İçeriğin (editor-instance-container) esnek büyümesi için
-  flex-direction: column; // İçeriği dikeyde yönetmek için
+  padding: 1in;
+  display: flex;
+  flex-direction: column;
 }
 
 .page-number {
@@ -74,31 +75,30 @@
 }
 
 .editor-instance-container {
-  flex-grow: 1; // Sayfa wrapper'ı içindeki tüm boşluğu doldurur
-  display: flex; // .ql-container'ın esnek büyümesi için
-  flex-direction: column; // .ql-container'ı dikeyde yönetmek için
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   outline: none;
-  position: relative; // Placeholder için
+  position: relative;
 
   .ql-container.ql-snow {
-    border: none !important; // Quill'in varsayılan border'ını kaldır
-    flex-grow: 1; // Kendisine ayrılan alanı doldurur
-    display: flex; // .ql-editor'ın esnek büyümesi için
-    flex-direction: column; // .ql-editor'ı dikeyde yönetmek için
+    border: none !important;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box;
     font-size: 11pt;
     line-height: 1.5;
     color: #333;
     background-color: transparent;
-    padding: 0 !important; // Quill container padding'ini kaldır (sayfa wrapper'ı hallediyor)
-    overflow: visible; // İçerik taşarsa scrollbar'ı pages-container halleder
+    padding: 0 !important;
+    overflow: visible;
   }
 
   .ql-editor {
-    padding: 0; // Sayfa kenar boşlukları document-page-wrapper tarafından sağlanıyor
-                // Eğer içeride ek bir padding isteniyorsa (örn: 10px) ayarlanabilir
-    flex-grow: 1; // .ql-container içindeki tüm alanı doldurur
+    padding: 0;
+    flex-grow: 1;
     box-sizing: border-box;
     background: transparent;
     box-shadow: none;
@@ -107,17 +107,13 @@
     outline: none;
     position: relative;
     z-index: 1;
-    // height: auto; // İçeriğe göre otomatik yükseklik, min-height parent'tan gelir
-    // min-height: initial; // Ya da Quill'in kendi min-height'ını sıfırla
   }
 
   .ql-editor.ql-blank::before {
     content: attr(data-placeholder);
     position: absolute;
-    top: 0; // .ql-editor padding'i 0 ise
-    left: 0; // .ql-editor padding'i 0 ise
-    // Eğer .ql-editor'a padding verilirse, buradaki top/left ona göre ayarlanmalı
-    // Örneğin: top: 10px; left: 10px; padding: 10px; (placeholder'ın metinle hizalı olması için)
+    top: 0;
+    left: 0;
     color: rgba(0, 0, 0, 0.5);
     pointer-events: none;
     font-style: italic;
@@ -125,7 +121,6 @@
     z-index: 2;
   }
 
-  // Quill'in kendi toolbar'ını kesinlikle gizle
   .ql-toolbar {
       display: none !important;
       visibility: hidden !important;
@@ -137,14 +132,13 @@
   }
 }
 
-/* Print stilleri için eklemeler gerekebilir */
 @media print {
   .document-editor {
     height: auto;
     background-color: white;
   }
   .toolbar-container, .document-header, .page-number {
-    display: none !important; /* Yazdırma sırasında toolbar ve başlığı gizle */
+    display: none !important;
   }
   .pages-container {
     overflow-y: visible;
@@ -153,18 +147,36 @@
     margin: 0;
   }
   .document-page-wrapper {
-    margin: 0 auto; /* Sayfaları ortala */
+    margin: 0 auto;
     box-shadow: none;
-    border: none; /* Yazdırmada sayfa kenarlığı olmasın */
-    padding: 1in; /* Kenar boşlukları kalsın */
-    page-break-after: always; /* Her sayfadan sonra sayfa sonu */
-    max-width: 100%; /* Yazdırma için genişliği serbest bırak */
-    min-height: auto; /* İçeriğe göre yükseklik */
+    border: none;
+    padding: 1in;
+    page-break-after: always;
+    max-width: 100%;
+    min-height: auto;
   }
   .document-page-wrapper:last-child {
     page-break-after: avoid;
   }
   .editor-instance-container .ql-editor {
-    padding: 0; /* Yazdırmada iç padding'i sıfırla */
+    padding: 0;
+  }
+}
+
+.document-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.save-status-container {
+  min-width: 180px; // Metin değiştikçe zıplamayı önler
+  text-align: left;
+  
+  .save-status {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+    transition: color 0.3s ease;
   }
 }

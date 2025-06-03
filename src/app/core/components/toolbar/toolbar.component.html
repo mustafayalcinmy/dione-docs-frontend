@@ -36,7 +36,9 @@
       Insert
       <div class="dropdown-menu" *ngIf="menuOpen === 'insert'">
         <div class="menu-option" (click)="handleMenuOption('insert-image')">Image...</div>
+
         <div class="menu-option" (click)="handleMenuOption('insert-table')">Table</div>
+
         <div class="menu-option" (click)="handleMenuOption('insert-link')">Link...</div>
         <div class="menu-option-divider"></div>
         <div class="menu-option" (click)="handleMenuOption('insert-new-page')">Add New Page</div>
@@ -45,23 +47,23 @@
   </div>
 
   <div class="format-controls">
-    <div class="font-size-select-wrapper" title="Font Size" (mousedown)="preventEditorBlur($event)">
-      <div class="font-size-display-area" (click)="handleFontSizeDisplayClick($event)">
-        <span *ngIf="!customSizeInputActive" class="current-size-text">
-          {{ displaySelectedFontSize() }} </span>
-        <input #fontSizeInputEl *ngIf="customSizeInputActive" type="number" class="custom-font-size-input"
-          [(ngModel)]="sizeInputValue" (click)="$event.stopPropagation()" (blur)="applyCustomSize()"
-          (keydown.enter)="applyCustomSize(); $event.preventDefault()" (keydown.escape)="cancelCustomSizeEdit()" min="1"
-          max="200">
-        <i class="material-icons arrow-icon" (click)="toggleSizeDropdownOnly($event)">arrow_drop_down</i>
-      </div>
-      <div class="font-size-dropdown-list" *ngIf="isSizeDropdownOpen">
-        <div *ngFor="let size of fontSizes" (click)="selectPredefinedSize(size, $event)" class="font-size-item">
-          {{ size.replace('px', '') }}
-        </div>
-      </div>
-    </div>
+  
+  <div class="font-size-select-wrapper" title="Font Style">
+    <select class="font-size-select" (change)="onFontChange($event)">
+      <option value="" disabled selected>Font Style</option>
+      <option *ngFor="let font of fontStyles" [value]="font.value" [style.fontFamily]="font.value">
+        {{ font.name }}
+      </option>
+    </select>
   </div>
+  <div class="font-size-select-wrapper" title="Font Size">
+    <select class="font-size-select" (change)="onSizeChange($event)">
+      <option value="" disabled selected>Font Size</option>
+      <option *ngFor="let size of fontSizes" [value]="size">{{ size.replace('px', '') }}</option>
+    </select>
+  </div>
+
+</div>
 
   <div class="action-divider"></div>
   <button class="action-button btn-icon" title="Bold (Ctrl+B)" (click)="onBoldClick()"> <i
@@ -70,6 +72,44 @@
       class="material-icons">format_italic</i> </button>
   <button class="action-button btn-icon" title="Underline (Ctrl+U)" (click)="onUnderlineClick()"> <i
       class="material-icons">format_underlined</i> </button>
+
+  <div class="action-divider"></div>
+
+  <div class="color-picker-container">
+    <button class="action-button btn-icon" title="Text Color" (click)="toggleColorPicker()">
+      <i class="material-icons" [style.color]="currentColor">format_color_text</i>
+    </button>
+
+    <div class="color-picker-popover" *ngIf="isColorPickerOpen">
+      <div class="popover-content">
+        <input type="color" #colorPicker class="color-picker-input" [value]="currentColor"
+          (input)="onColorInputChange($event)">
+        <button class="action-button btn-text btn-apply-color" (click)="onApplyColorClick()">
+          Apply
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="table-inserter-wrapper">
+    <button class="action-button btn-icon" title="Insert Table" (click)="toggleTableGrid()">
+      <i class="material-icons">grid_on</i>
+    </button>
+
+    <div class="table-grid-popover" *ngIf="isTableGridOpen">
+      <div class="grid-dimension-display">{{ hoveredRows }} x {{ hoveredCols }}</div>
+      <div class="table-grid" (mouseleave)="resetHovered()"
+        [ngStyle]="{'grid-template-columns': 'repeat(' + cols.length + ', 20px)'}">
+
+        <ng-container *ngFor="let row of rows; let r_index = index">
+          <div *ngFor="let col of cols; let c_index = index" class="grid-cell"
+            (mouseover)="handleGridMouseOver(r_index + 1, c_index + 1)"
+            (click)="handleGridClick(r_index + 1, c_index + 1)"
+            [class.highlighted]="(r_index + 1) <= hoveredRows && (c_index + 1) <= hoveredCols">
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
   <div class="action-divider"></div>
   <button class="action-button btn-icon" title="Insert Link" (click)="onLinkClick()"> <i class="material-icons">link</i>
   </button>

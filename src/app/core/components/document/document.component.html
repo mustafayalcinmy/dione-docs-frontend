@@ -1,13 +1,22 @@
 <div class="document-editor">
   <div class="document-header">
+    <button mat-icon-button aria-label="Ana Sayfa" (click)="goBackToMainPage()">
+      <mat-icon>home</mat-icon>
+    </button>
     <h1 class="document-title"
-        contenteditable="true"
-        (blur)="updateTitle($event)"
-        [textContent]="title"></h1>
-  </div>
+      contenteditable="true"
+      (blur)="updateTitle($event)"
+      (keydown)="preventEnterKey($event)"
+      [textContent]="title">
+    </h1>
+    
+    <div class="save-status-container">
+    </div>
+    </div>
 
-  <div class="toolbar-container">
+<div class="toolbar-container">
     <app-toolbar
+      [currentSelectionFormat]="currentSelectionFormatState"
       (newClick)="handleNew()"
       (saveClick)="handleSave()"
       (downloadClick)="handleDownload()"
@@ -16,11 +25,14 @@
       (undoClick)="handleUndo()"
       (redoClick)="handleRedo()"
       (sizeSelected)="applyFontSize($event)"
+      (fontSelected)="applyFormat('font', $event)"
       (bold)="toggleBold()"
       (italic)="toggleItalic()"
       (underline)="toggleUnderline()"
       (link)="insertLink()"
-      >
+      (colorSelected)="applyColor($event)"
+      (insertTable)="handleInsertTable()"
+      (tableInsertWithSize)="handleInsertTable($event)">
     </app-toolbar>
   </div>
 

@@ -89,7 +89,7 @@
                     <button mat-icon-button (click)="editDocument(element); $event.stopPropagation();" matTooltip="Düzenle" aria-label="Düzenle">
                         <mat-icon>edit</mat-icon>
                     </button>
-                    <button mat-icon-button (click)="deleteDocument(element); $event.stopPropagation();" matTooltip="Sil" aria-label="Sil">
+                    <button mat-icon-button (click)="deleteDocument(element.id); $event.stopPropagation();" matTooltip="Sil" aria-label="Sil">
                         <mat-icon>delete</mat-icon>
                     </button>
                 </td>

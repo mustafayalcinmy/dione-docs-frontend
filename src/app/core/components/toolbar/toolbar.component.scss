@@ -1,161 +1,133 @@
-/* toolbar.component.scss */
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons'); // Ensure Material Icons font is available
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
 .main-toolbar {
   display: flex;
-  justify-content: flex-start; // Align items to the start initially
+  justify-content: flex-start;
   align-items: center;
   padding: 5px 10px;
-  background-color: #f8f9fa; // Light background
-  border-bottom: 1px solid #d1d5db; // Bottom border
-  height: 40px; // Define toolbar height
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #d1d5db;
+  height: 40px;
   box-sizing: border-box;
   flex-shrink: 0;
-  gap: 15px; // Add gap between main sections (menus, format, actions)
+  gap: 15px;
 }
 
 .menu-bar {
   display: flex;
-  gap: 5px; // Spacing between menu items
-  position: relative; // Needed for absolute positioning of dropdowns
+  gap: 5px;
+  position: relative;
   align-items: center;
   height: 100%;
 }
 
 .menu-item {
-  padding: 5px 12px; // Padding inside menu items like 'File'
+  padding: 5px 12px;
   cursor: pointer;
   border-radius: 4px;
   position: relative;
-  font-size: 0.9em; // Slightly smaller font
+  font-size: 0.9em;
   color: #333;
-  height: calc(100% - 10px); // Fit within toolbar height with padding
+  height: calc(100% - 10px);
   display: flex;
   align-items: center;
-  white-space: nowrap; // Prevent menu names from wrapping
-  &:hover { background-color: #e8eaed; } // Hover state
-  &.active { background-color: #e0e2e6; } // Active state (when dropdown is open)
+  white-space: nowrap;
+  &:hover { background-color: #e8eaed; }
+  &.active { background-color: #e0e2e6; }
 }
 
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 2px); // Position below menu item
-  left: 0; // Align with left edge of menu item
+  top: calc(100% + 2px);
+  left: 0;
   background-color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); // Dropdown shadow
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 4px;
-  min-width: 180px; // Minimum width for dropdown
-  z-index: 1000; // Ensure dropdown appears above other content
+  min-width: 180px;
+  z-index: 1000;
   border: 1px solid #d1d5db;
-  padding: 5px 0; // Padding inside the dropdown container
+  padding: 5px 0;
 }
 
 .menu-option {
-  padding: 8px 16px; // Padding for individual options (e.g., 'Save')
+  padding: 8px 16px;
   cursor: pointer;
   font-size: 0.9em;
   color: #333;
   white-space: nowrap;
-  &:hover { background-color: #f1f3f4; } // Hover state for options
+  &:hover { background-color: #f1f3f4; }
 }
 
-// Visual divider line within dropdown menus
 .menu-option-divider {
    height: 1px;
    background-color: #e0e0e0;
-   margin: 5px 0; // Space above/below divider
+   margin: 5px 0;
 }
 
-// Container for format controls (Bold, Italic, Size etc.)
 .format-controls {
   display: flex;
   align-items: center;
-  gap: 5px; // Space between format buttons/controls
+  gap: 5px;
   height: 100%;
-  // flex-grow: 1; // Optionally allow grow
-  // flex-shrink: 1; // Allow shrinking
 }
 
-// Container for right-aligned actions (Save, Print, etc.)
 .quick-actions {
   display: flex;
   align-items: center;
   gap: 8px;
   height: 100%;
-  margin-left: auto; // Push this section to the far right
+  margin-left: auto;
 }
 
-// Shared styles for buttons within format-controls and quick-actions
 .action-button, .format-controls button {
   background: none;
-  border: 1px solid transparent; // No border by default
-  color: #444; // Default text/icon color
+  border: 1px solid transparent;
+  color: #444;
   cursor: pointer;
-  height: 28px; // Consistent height
+  height: 28px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 8px; // Default padding
+  padding: 0 8px;
   font-size: 0.9em;
-  white-space: nowrap; // Prevent text wrapping
-  transition: background-color 0.2s ease, border-color 0.2s ease; // Smooth transitions
+  white-space: nowrap;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 
   &:hover {
-    background-color: #e8eaed; // Hover background
-    border-color: #d1d5db; // Show border on hover
+    background-color: #e8eaed;
+    border-color: #d1d5db;
   }
   &:active {
-     background-color: #d1d5db; // Clicked state background
+     background-color: #d1d5db;
   }
 
-  // Specific styles for icon-only buttons
   &.btn-icon {
-     width: 28px; // Make icon buttons square
-     padding: 0; // Remove padding for icon-only buttons
-     font-size: 1.1em; // Slightly larger icon size relative to text size
+     width: 28px;
+     padding: 0;
+     font-size: 1.1em;
      i.material-icons {
-        font-size: 20px; // Explicit icon size
-        vertical-align: middle; // Ensure vertical alignment
+        font-size: 20px;
+        vertical-align: middle;
      }
   }
-  // Styles for text buttons (commented out as no special styles needed currently)
-  // &.btn-text { }
 }
 
-// // Style for the Font Size dropdown in format controls
-// .format-controls .font-size-select {
-//   height: 28px; // Match button height
-//   border: 1px solid #ccc;
-//   border-radius: 4px;
-//   padding: 0 6px; // Adjust padding
-//   font-size: 0.9em;
-//   background-color: white;
-//   margin: 0 3px; // Spacing
-//   cursor: pointer;
-//   outline: none;
-//   vertical-align: middle; // Align with buttons
-//   &:hover { border-color: #bbb; }
-//   &:focus { border-color: #8ab4f8; } // Highlight focus
-// }
-
-// Visual divider line within quick actions or format controls
 .action-divider {
    width: 1px;
    height: 20px;
    background-color: #d1d5db;
    margin: 0 4px;
-   vertical-align: middle; // Align divider vertically
+   vertical-align: middle;
 }
 
-
-// Font Size Kontrolü için Stiller
 .font-size-select-wrapper {
-  position: relative; // Dropdown'ın doğru konumlanması için
-  display: inline-block; // Veya flex item ise uygun şekilde
-  height: 28px; // Diğer butonlarla aynı yükseklik
+  position: relative;
+  display: inline-block;
+  height: 28px;
   vertical-align: middle;
   margin: 0 3px;
+  margin-right: 8px;
 }
 
 .font-size-display-area {
@@ -167,7 +139,7 @@
   border-radius: 4px;
   background-color: white;
   cursor: pointer;
-  min-width: 60px; // Metin ve ok için minimum genişlik
+  min-width: 60px;
   box-sizing: border-box;
 
   &:hover {
@@ -176,49 +148,26 @@
 
   .current-size-text {
     font-size: 0.9em;
-    margin-right: 4px; // Ok ile arasında boşluk
-    user-select: none; // Metnin seçilmesini engelle
-    flex-grow: 1; // Mümkün olduğunca genişle
-    text-align: center; // Veya left
-  }
-
-  .custom-font-size-input {
-    width: 40px; // Giriş alanı için genişlik
-    height: calc(100% - 4px); // İçeride biraz boşluk bırak
-    border: none;
-    outline: none;
+    margin-right: 4px;
+    user-select: none;
+    flex-grow: 1;
     text-align: center;
-    font-size: 0.9em;
-    padding: 0 2px;
-    box-sizing: border-box;
-    // Firefox'ta number input oklarını gizle
-    -moz-appearance: textfield;
-    &::-webkit-outer-spin-button,
-    &::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-  }
-
-  .arrow-icon {
-    font-size: 20px;
-    color: #5f6368;
   }
 }
 
 .font-size-dropdown-list {
   position: absolute;
-  top: 100%; // Display area'nın hemen altında
+  top: 100%;
   left: 0;
   background-color: white;
   border: 1px solid #ccc;
-  border-top: none; // Display area ile birleşik görünüm
+  border-top: none;
   border-radius: 0 0 4px 4px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  z-index: 1001; // Diğer dropdown menülerden üstte olabilir
-  max-height: 200px; // Gerekirse scroll eklenebilir
+  z-index: 1001;
+  max-height: 200px;
   overflow-y: auto;
-  min-width: 100%; // Wrapper kadar geniş
+  min-width: 100%;
 
   .font-size-item {
     padding: 6px 12px;
@@ -228,4 +177,122 @@
       background-color: #f1f3f4;
     }
   }
+}
+.color-picker-container {
+  position: relative;
+}
+
+.color-picker-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+
+  .popover-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .popover-label {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .color-picker-input {
+  }
+
+  .btn-apply-color {
+  }
+}
+.font-style-select-wrapper {
+  position: relative;
+  display: inline-block;
+  height: 28px;
+  vertical-align: middle;
+  margin: 0 3px;
+  margin-right: 8px;
+}
+.font-style-select {
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  height: 36px;
+  max-width: 140px;
+}
+
+.color-picker-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .color-picker-input {
+    visibility: hidden;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .action-button i {
+    cursor: pointer;
+  }
+
+  .btn-apply-color {
+    margin-left: 4px;
+    height: 28px;
+    line-height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+    min-width: auto;
+  }
+}
+
+.table-inserter-wrapper {
+  position: relative;
+}
+
+.table-grid-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.grid-dimension-display {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 8px;
+  min-height: 14px;
+}
+
+.table-grid {
+  display: grid;
+  gap: 2px;
+}
+
+.grid-cell {
+  width: 20px;
+  height: 20px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: background-color 0.1s ease-in-out;
+}
+
+.grid-cell.highlighted {
+  background-color: #b3d4fc;
+  border-color: #5b99e5;
 }

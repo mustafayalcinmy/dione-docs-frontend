@@ -6,12 +6,13 @@ import { map, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import {
   QuillDelta,
+  
   DocumentPayload,
   DocumentResponseFromAPI,
   DocumentListResponseFromAPI,
   CombinedDocumentList
 } from '../dto/document.dto';
-
+import { Op } from 'quill-delta';
 @Injectable({
   providedIn: 'root'
 })
@@ -32,53 +33,60 @@ export class DocumentService {
   }
 
   private mapResponseToPayload(response: DocumentResponseFromAPI): DocumentPayload {
-    let parsedContent: QuillDelta = { ops: [] };
-    console.log('mapResponseToPayload - Gelen yanıt:', response);
+    let parsedContent: QuillDelta = { ops: [{ insert: '\n' }] }; // Hata durumunda veya boş içerikte varsayılan
 
     if (response.content) {
       try {
-        // Adım 1: Backend'den gelen base64 string'ini decode et.
-        // Tarayıcı ortamında `atob()` fonksiyonu bunun için kullanılabilir.
-        // Node.js ortamında (SSR sırasında) Buffer kullanılabilir.
-        // Angular'da platforma göre işlem yapmak daha doğru olur.
         let decodedJsonString: string;
         if (typeof window !== 'undefined' && typeof window.atob === 'function') {
-          // Tarayıcı ortamı
-          decodedJsonString = window.atob(response.content);
+          // Tarayıcı ortamı için UTF-8 çözümleyici
+          const binaryString = window.atob(response.content);
+          const bytes = Uint8Array.from(binaryString, char => char.charCodeAt(0));
+          decodedJsonString = new TextDecoder('utf-8').decode(bytes);
         } else {
-          // Node.js ortamı (SSR)
+            // Node.js ortamı için zaten UTF-8 destekli
           decodedJsonString = Buffer.from(response.content, 'base64').toString('utf-8');
         }
+
         console.log('mapResponseToPayload - Base64 decode edilmiş JSON string:', decodedJsonString);
 
-        // Adım 2: Decode edilmiş JSON string'ini parse et.
         if (typeof decodedJsonString === 'string' && decodedJsonString.trim() !== "") {
-          const tempParsed = JSON.parse(decodedJsonString);
-          if (tempParsed && Array.isArray(tempParsed.ops)) {
-            parsedContent = tempParsed as QuillDelta;
-            console.log('mapResponseToPayload - Başarıyla parse edilen içerik:', parsedContent);
+          const temp = JSON.parse(decodedJsonString); // SADECE BİR KEZ PARSE ET
+          const parsedData = JSON.parse(temp); // SADECE BİR KEZ PARSE ET
+          console.log('mapResponseToPayload - Decode edilmiş stringden parse edilen veri:', parsedData, typeof parsedData);
+
+          if (parsedData && typeof parsedData === 'object' && Array.isArray(parsedData.ops)) {
+            // Durum 1: Gelen veri zaten doğru QuillDelta formatında: { ops: [...] }
+            parsedContent = parsedData as QuillDelta;
+            console.log('mapResponseToPayload: Doğrudan QuillDelta objesi olarak parse edildi:', parsedContent);
+          } else if (parsedData && Array.isArray(parsedData)) {
+            // Durum 2: Gelen veri bir operasyon dizisi: [{insert:'...'}, ...]
+            // Bu senin "obje aslında bu şekilde geliyor db'den" tanımına uyuyor.
+            parsedContent = { ops: parsedData as Op[] };
+            console.log('mapResponseToPayload: Ops dizisi olarak parse edildi ve QuillDelta objesine sarıldı:', parsedContent);
           } else {
-            console.warn('mapResponseToPayload - Parse edilen içerik QuillDelta formatında değil:', tempParsed);
+            console.warn('mapResponseToPayload - Parse edilen veri QuillDelta formatında değil veya bir ops dizisi değil:', parsedData);
           }
         } else {
-          console.warn('mapResponseToPayload - Decode edilen içerik boş veya string değil:', decodedJsonString);
+          console.warn('mapResponseToPayload - Decode edilmiş içerik boş veya string değil:', decodedJsonString);
         }
       } catch (e) {
-        console.error('mapResponseToPayload - Doküman içeriği base64 decode veya JSON.parse hatası:', e, 'Ham (base64) içerik:', response.content);
-        // throw new Error('Doküman içeriği okunamadı.'); // Hata component'e taşınabilir
+        console.error('mapResponseToPayload - Doküman içeriği (base64 decode veya JSON.parse) hatası:', e, 'Ham (base64) içerik:', response.content);
+        // Hata durumunda parsedContent varsayılan değerini koruyacak ({ ops: [{ insert: '\n' }] })
       }
     } else {
-      console.warn('mapResponseToPayload - API yanıtında content alanı bulunmuyor veya null.');
+      console.warn('mapResponseToPayload - API yanıtında "content" alanı bulunmuyor veya null.');
     }
 
+    // Temel alanların varlığını kontrol et ve varsayılan değerler ata (gerekirse)
     if (!response.id || typeof response.title === 'undefined' || !response.owner_id) {
-        console.error('mapResponseToPayload - API yanıtında zorunlu alanlar eksik veya hatalı:', response);
-        throw new Error('Sunucudan gelen doküman verisinde eksik veya hatalı temel alanlar mevcut.');
+        console.error('mapResponseToPayload - API yanıtında zorunlu alanlar eksik:', response);
+        // Burada hata fırlatabilir veya kısmi bir payload döndürebilirsin. Şimdilik logluyoruz.
     }
 
     return {
-      id: response.id,
-      title: response.title,
+      id: response.id ?? `fallback-id-${Date.now()}`, // ID yoksa geçici bir ID ata
+      title: response.title ?? 'Adsız Doküman',
       description: response.description,
       owner_id: response.owner_id,
       version: response.version,
@@ -86,7 +94,7 @@ export class DocumentService {
       status: response.status,
       created_at: response.created_at,
       updated_at: response.updated_at,
-      content: parsedContent
+      content: parsedContent // Güvenli parsedContent
     };
   }
 
@@ -178,6 +186,15 @@ export class DocumentService {
         }),
         catchError(err => {
             console.error('getUserDocuments servisinde HTTP veya map hatası:', err);
+            return throwError(() => err);
+        })
+      );
+  }
+  deleteDocument(docId: string): Observable<void> {
+    return this.http.delete<void>(`${this.API_URL}/${docId}`, { headers: this.getAuthHeaders() })
+      .pipe(
+        catchError(err => {
+            console.error('deleteDocument servisinde HTTP hatası:', err);
             return throwError(() => err);
         })
       );
