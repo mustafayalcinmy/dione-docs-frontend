@@ -14,6 +14,8 @@ import { QuillDelta, DocumentPayload } from '../../dto/document.dto';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 
 interface QuillRange { index: number; length: number; }
@@ -49,7 +51,9 @@ const QUILL_FONT_STYLES_WHITELIST = [
     CommonModule,
     ToolbarComponent,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule
   ],
   templateUrl: './document.component.html',
   styleUrls: ['./document.component.scss'],
@@ -63,7 +67,8 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   private DeltaConstructor: typeof Delta | null = null;
   private Parchment: any = null;
   private activeTypingFormats: any = {};
-
+  public saveIconState: 'hidden' | 'unsaved' | 'saving' | 'saved' | 'error' = 'hidden';
+  private saveTimeout: any;
   private activeEditorInstanceId: string | null = null;
   private lastKnownSelection: { editorId: string, range: QuillRange } | null = null;
   public currentSelectionFormatState: any = {};
@@ -80,7 +85,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   private currentDocumentStatus: string = 'draft';
   private currentDocumentDescription: string = '';
   private isDirty = false;
-  public saveStatus: string = 'Tüm değişiklikler kaydedildi'; // Metinler daha dinamik olacak
+  public saveStatus: string = 'Tüm değişiklikler kaydedildi';
   private autoSaveSubject = new Subject<void>();
   private autoSaveSubscription: Subscription | null = null;
 
@@ -179,15 +184,15 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private initializeAutoSave(): void {
     this.autoSaveSubscription = this.autoSaveSubject.pipe(
-      debounceTime(2500),
+      debounceTime(500),
       filter(() => this.isDirty && !!this.currentDocumentId),
       tap(() => {
-        this.saveStatus = 'Kaydediliyor...';
+        this.saveIconState = 'saving';
         this.changeDetector.detectChanges();
       }),
       switchMap(() => this._autoSaveDocument().pipe(
         catchError((err) => {
-          this.saveStatus = 'Otomatik kaydetme hatası!';
+          this.saveIconState = 'error';
           this.isDirty = true;
           this.changeDetector.detectChanges();
           console.error("Otomatik kaydetme hatası:", err);
@@ -196,7 +201,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       ))
     ).subscribe(result => {
       if (result) {
-        this.saveStatus = 'Tüm değişiklikler kaydedildi';
+        this.saveIconState = 'saved';
         this.isDirty = false;
         this.currentDocumentVersion = result.version ?? this.currentDocumentVersion;
         this.changeDetector.detectChanges();
@@ -317,9 +322,10 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
           editor.on('text-change', (delta: Delta, oldDelta: Delta, source: QuillSources) => {
             if (source === quillSourcesUser) {
               this.isDirty = true;
-              this.saveStatus = 'Kaydedilmemiş değişiklikler var';
+              this.saveIconState = 'unsaved';
+              if (this.saveTimeout) clearTimeout(this.saveTimeout);
+
               if (!this.currentDocumentId) {
-                this.saveStatus = 'Kaydetmek için butona tıklayın';
               } else {
                 this.autoSaveSubject.next();
               }
@@ -959,12 +965,10 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.saveStatus = 'Kaydediliyor...';
+    this.saveIconState = 'saving';
     this.changeDetector.detectChanges();
 
     if (this.currentDocumentId) {
-      // --- VAR OLAN DOKÜMANI GÜNCELLE ---
-      // ÇÖZÜM: Argümanların undefined olması durumunda null gönderilmesini sağlıyoruz.
       this.documentService.updateDocument(
         this.currentDocumentId,
         this.title ?? null,
@@ -975,37 +979,36 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       ).subscribe({
         next: (updatedDoc: DocumentPayload) => {
           this.isDirty = false;
-          this.saveStatus = 'Tüm değişiklikler kaydedildi';
+          this.saveIconState = 'saved';
           this.currentDocumentVersion = updatedDoc.version ?? this.currentDocumentVersion;
           this.changeDetector.detectChanges();
         },
         error: (err) => {
-          this.saveStatus = 'Kaydetme hatası!';
+          this.saveIconState = 'error';
           this.changeDetector.detectChanges();
           console.error("Döküman güncellenirken hata:", err);
           alert(`Güncelleme hatası: ${err.message}`);
         }
       });
     } else {
-      // --- YENİ DOKÜMAN OLUŞTUR ---
       this.documentService.createDocument(
         this.title, this.currentDocumentDescription, finalDelta, this.currentDocumentIsPublic
       ).subscribe({
         next: (createdDoc: DocumentPayload) => {
           if (createdDoc && createdDoc.id) {
             this.isDirty = false;
-            this.saveStatus = 'Tüm değişiklikler kaydedildi';
+            this.saveIconState = 'saved';
             this.currentDocumentId = createdDoc.id;
             this.currentDocumentVersion = createdDoc.version ?? 1;
-            this.currentDocumentOwnerId = createdDoc.owner_id ?? null; // undefined kontrolü
-            this.currentDocumentIsPublic = createdDoc.is_public ?? false; // undefined kontrolü
+            this.currentDocumentOwnerId = createdDoc.owner_id ?? null;
+            this.currentDocumentIsPublic = createdDoc.is_public ?? false;
             this.changeDetector.detectChanges();
             this.router.navigate(['/document', createdDoc.id], { replaceUrl: true });
             alert('Döküman başarıyla oluşturuldu!');
           }
         },
         error: (err) => {
-          this.saveStatus = 'Kaydetme hatası!';
+          this.saveIconState = 'error';
           this.changeDetector.detectChanges();
           console.error("Döküman oluşturulurken hata:", err);
           alert(`Oluşturma hatası: ${err.message}`);
@@ -1134,17 +1137,17 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.title !== newTitle) {
       this.title = newTitle || 'Adsız Döküman';
       this.isDirty = true;
-      this.saveStatus = 'Kaydedilmemiş değişiklikler var';
-      if (this.currentDocumentId) {
+      this.saveIconState = 'unsaved';
+      if (this.saveTimeout) clearTimeout(this.saveTimeout);
+
+      if(this.currentDocumentId) {
         this.autoSaveSubject.next();
-      } else {
-        this.saveStatus = 'Kaydetmek için butona tıklayın';
-      }
     }
     if (!newTitle && event.target.innerText.trim() !== this.title) {
       event.target.innerText = this.title;
     }
   }
+}
 
   private updateTitleInDOM(): void {
     if (isPlatformBrowser(this.platformId)) {

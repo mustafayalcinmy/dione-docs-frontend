@@ -3,35 +3,36 @@
     <button mat-icon-button aria-label="Ana Sayfa" (click)="goBackToMainPage()">
       <mat-icon>home</mat-icon>
     </button>
-    <h1 class="document-title"
-      contenteditable="true"
-      (blur)="updateTitle($event)"
-      (keydown)="preventEnterKey($event)"
+    <h1 class="document-title" contenteditable="true" (blur)="updateTitle($event)" (keydown)="preventEnterKey($event)"
       [textContent]="title">
     </h1>
-    
-    <div class="save-status-container">
-    </div>
-    </div>
 
-<div class="toolbar-container">
-    <app-toolbar
-      [currentSelectionFormat]="currentSelectionFormatState"
-      (newClick)="handleNew()"
-      (saveClick)="handleSave()"
-      (downloadClick)="handleDownload()"
-      (printClick)="handlePrint()"
-      (addNewPage)="handleAddNewPage()"
-      (undoClick)="handleUndo()"
-      (redoClick)="handleRedo()"
-      (sizeSelected)="applyFontSize($event)"
-      (fontSelected)="applyFormat('font', $event)"
-      (bold)="toggleBold()"
-      (italic)="toggleItalic()"
-      (underline)="toggleUnderline()"
-      (link)="insertLink()"
-      (colorSelected)="applyColor($event)"
-      (insertTable)="handleInsertTable()"
+    <div class="save-status-container" [ngSwitch]="saveIconState">
+      <mat-icon *ngSwitchCase="'unsaved'" class="save-button-icon" matTooltip="Kaydetmek için tıkla"
+        (click)="handleSave()">
+        cloud_upload
+      </mat-icon>
+
+      <mat-spinner *ngSwitchCase="'saving'" [diameter]="24"></mat-spinner>
+
+      <mat-icon *ngSwitchCase="'saved'" class="success-icon" matTooltip="Tüm değişiklikler kaydedildi!">
+        check_circle
+      </mat-icon>
+
+      <mat-icon *ngSwitchCase="'error'" class="error-icon" matTooltip="Kaydetme hatası! Tekrar denemek için tıkla."
+        (click)="handleSave()">
+        error
+      </mat-icon>
+    </div>
+  </div>
+
+  <div class="toolbar-container">
+    <app-toolbar [currentSelectionFormat]="currentSelectionFormatState" (newClick)="handleNew()"
+      (saveClick)="handleSave()" (downloadClick)="handleDownload()" (printClick)="handlePrint()"
+      (addNewPage)="handleAddNewPage()" (undoClick)="handleUndo()" (redoClick)="handleRedo()"
+      (sizeSelected)="applyFontSize($event)" (fontSelected)="applyFormat('font', $event)" (bold)="toggleBold()"
+      (italic)="toggleItalic()" (underline)="toggleUnderline()" (link)="insertLink()"
+      (colorSelected)="applyColor($event)" (insertTable)="handleInsertTable()"
       (tableInsertWithSize)="handleInsertTable($event)">
     </app-toolbar>
   </div>
@@ -41,7 +42,7 @@
       <div class="page-number">Page {{ i + 1 }}</div>
 
       <div class="editor-instance-container" [id]="page.id">
-        </div>
+      </div>
     </div>
   </div>
 </div>

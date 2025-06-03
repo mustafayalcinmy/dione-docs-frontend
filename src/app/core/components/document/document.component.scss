@@ -169,14 +169,33 @@
   gap: 10px;
 }
 
+
 .save-status-container {
-  min-width: 180px; // Metin değiştikçe zıplamayı önler
-  text-align: left;
-  
-  .save-status {
-    font-size: 14px;
-    color: #666;
-    font-style: italic;
-    transition: color 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; 
+  height: 32px;
+  margin-left: 10px;
+}
+
+.save-button-icon, .error-icon {
+  cursor: pointer;
+  color: #5f6368;
+  transition: background-color 0.2s ease-in-out;
+  border-radius: 50%;
+  padding: 4px;
+
+  &:hover {
+    background-color: #f1f3f4;
   }
+}
+
+.success-icon {
+  color: #1e8e3e;
+  font-size: 28px;
+}
+
+.error-icon {
+  color: #d93025;
 }
