@@ -33,7 +33,8 @@
       (sizeSelected)="applyFontSize($event)" (fontSelected)="applyFormat('font', $event)" (bold)="toggleBold()"
       (italic)="toggleItalic()" (underline)="toggleUnderline()" (link)="insertLink()"
       (colorSelected)="applyColor($event)" (insertTable)="handleInsertTable()"
-      (tableInsertWithSize)="handleInsertTable($event)">
+      (tableInsertWithSize)="handleInsertTable($event)" (shareDocumentClick)="openShareDialog()">
+
     </app-toolbar>
   </div>
 

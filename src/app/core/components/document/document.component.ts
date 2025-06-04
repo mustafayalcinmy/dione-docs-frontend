@@ -16,6 +16,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ShareDialogComponent, ShareDialogData } from '../share-dialog/share-dialog.component';
 
 
 interface QuillRange { index: number; length: number; }
@@ -53,6 +55,7 @@ const QUILL_FONT_STYLES_WHITELIST = [
     MatIconModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
     MatTooltipModule
   ],
   templateUrl: './document.component.html',
@@ -95,7 +98,8 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     private documentService: DocumentService,
     private authService: AuthService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    public dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -1140,14 +1144,14 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       this.saveIconState = 'unsaved';
       if (this.saveTimeout) clearTimeout(this.saveTimeout);
 
-      if(this.currentDocumentId) {
+      if (this.currentDocumentId) {
         this.autoSaveSubject.next();
-    }
-    if (!newTitle && event.target.innerText.trim() !== this.title) {
-      event.target.innerText = this.title;
+      }
+      if (!newTitle && event.target.innerText.trim() !== this.title) {
+        event.target.innerText = this.title;
+      }
     }
   }
-}
 
   private updateTitleInDOM(): void {
     if (isPlatformBrowser(this.platformId)) {
@@ -1157,4 +1161,31 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
   }
+
+  openShareDialog(): void {
+    console.log('DocumentComponent: openShareDialog method called.'); // Kontrol için log
+    if (!this.currentDocumentId) {
+      console.error('DocumentComponent: currentDocumentId is null or undefined. Cannot open share dialog.');
+      alert('Paylaşım için lütfen önce belgeyi kaydedin veya mevcut bir belgeyi açın.');
+      return;
+    }
+    if (!this.title) {
+      console.warn('DocumentComponent: Document title is not set. Using a default title for share dialog.');
+    }
+
+    const dialogData: ShareDialogData = {
+      documentId: this.currentDocumentId,
+      documentTitle: this.title || 'Başlıksız Belge' // Eğer title boşsa varsayılan bir başlık ata
+    };
+
+    console.log('DocumentComponent: Opening share dialog with data:', dialogData);
+    this.dialog.open(ShareDialogComponent, {
+      width: '600px',
+      maxWidth: '90vw',
+      data: dialogData,
+      autoFocus: false
+    });
+  }
+
+
 }

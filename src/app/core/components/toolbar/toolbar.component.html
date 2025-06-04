@@ -47,23 +47,23 @@
   </div>
 
   <div class="format-controls">
-  
-  <div class="font-size-select-wrapper" title="Font Style">
-    <select class="font-size-select" (change)="onFontChange($event)">
-      <option value="" disabled selected>Font Style</option>
-      <option *ngFor="let font of fontStyles" [value]="font.value" [style.fontFamily]="font.value">
-        {{ font.name }}
-      </option>
-    </select>
-  </div>
-  <div class="font-size-select-wrapper" title="Font Size">
-    <select class="font-size-select" (change)="onSizeChange($event)">
-      <option value="" disabled selected>Font Size</option>
-      <option *ngFor="let size of fontSizes" [value]="size">{{ size.replace('px', '') }}</option>
-    </select>
-  </div>
 
-</div>
+    <div class="font-size-select-wrapper" title="Font Style">
+      <select class="font-size-select" (change)="onFontChange($event)">
+        <option value="" disabled selected>Font Style</option>
+        <option *ngFor="let font of fontStyles" [value]="font.value" [style.fontFamily]="font.value">
+          {{ font.name }}
+        </option>
+      </select>
+    </div>
+    <div class="font-size-select-wrapper" title="Font Size">
+      <select class="font-size-select" (change)="onSizeChange($event)">
+        <option value="" disabled selected>Font Size</option>
+        <option *ngFor="let size of fontSizes" [value]="size">{{ size.replace('px', '') }}</option>
+      </select>
+    </div>
+
+  </div>
 
   <div class="action-divider"></div>
   <button class="action-button btn-icon" title="Bold (Ctrl+B)" (click)="onBoldClick()"> <i

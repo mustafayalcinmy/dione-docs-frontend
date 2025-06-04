@@ -1,0 +1,95 @@
+<div class="share-dialog-wrapper">
+  <div class="dialog-header">
+    <mat-icon class="header-icon">share</mat-icon>
+    <h1 mat-dialog-title class="header-title">"{{ data.documentTitle }}" Paylaş</h1>
+  </div>
+
+  <div mat-dialog-content class="dialog-main-content">
+    <p class="dialog-intro-text">Bu belgeye kimlerin erişebileceğini yönetin.</p>
+
+    <div class="section invite-user-section">
+      <h2 class="section-heading">Yeni Kişi Davet Et</h2>
+      <div class="invite-controls">
+        <mat-form-field appearance="outline" class="invite-email-field">
+          <mat-label>E-posta Adresi</mat-label>
+          <input matInput [(ngModel)]="inviteEmail" placeholder="kullanici@example.com" type="email" (keyup.enter)="sendInvitation()">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="invite-access-field">
+          <mat-label>Erişim Tipi</mat-label>
+          <mat-select [(ngModel)]="inviteAccessType">
+            <mat-option value="viewer">Görüntüleyici</mat-option>
+            <mat-option value="editor">Düzenleyici</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-flat-button color="primary"
+                class="invite-send-button"
+                (click)="sendInvitation()"
+                [disabled]="isProcessing || !inviteEmail.trim()">
+          <mat-icon *ngIf="!isProcessing">person_add</mat-icon>
+          <mat-progress-spinner *ngIf="isProcessing" mode="indeterminate" [diameter]="20"></mat-progress-spinner>
+          <span>{{ isProcessing ? 'Gönderiliyor...' : 'Davet Gönder' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <mat-divider class="section-divider-enhanced"></mat-divider>
+
+    <div class="section shared-with-section">
+      <h2 class="section-heading">Paylaşılan Kişiler ({{ sharedWith.length }})</h2>
+
+      <div *ngIf="isLoadingShares" class="loading-indicator">
+        <mat-progress-spinner mode="indeterminate" [diameter]="40"></mat-progress-spinner>
+        <p>Paylaşımlar yükleniyor...</p>
+      </div>
+
+      <div *ngIf="!isLoadingShares && sharedWith.length === 0" class="empty-list-message">
+        <mat-icon>group_off</mat-icon>
+        <p>Bu belge henüz kimseyle paylaşılmamış.</p>
+      </div>
+
+      <mat-list *ngIf="!isLoadingShares && sharedWith.length > 0" class="shared-users-list">
+        <mat-list-item *ngFor="let share of sharedWith; let last = last" class="shared-user-item">
+          <mat-icon matListItemAvatar class="user-avatar-icon">account_circle</mat-icon>
+          <div matListItemTitle class="user-email">{{ share.user_email }}</div>
+          <div matListItemLine class="user-permission-details">
+            <span class="permission-role" [ngClass]="'role-' + share.access_type">{{ share.access_type | titlecase }}</span>
+            <span class="permission-status-badge" [ngClass]="'status-' + share.status">
+              {{ share.status | titlecase }}
+            </span>
+            <span *ngIf="share.status === permissionStatus.Pending && share.shared_by" class="invited-by-info">
+              (Davet eden: {{ share.shared_by }})
+            </span>
+          </div>
+
+          <div matListItemMeta class="user-actions">
+            <ng-container *ngIf="share.status === permissionStatus.Accepted">
+              <mat-form-field appearance="outline" class="permission-update-select">
+                <mat-select [value]="share.access_type"
+                            (selectionChange)="updatePermission(share, $event.value)"
+                            [disabled]="isProcessing" aria-label="Yetkiyi değiştir">
+                  <mat-option value="viewer">Görüntüleyici</mat-option>
+                  <mat-option value="editor">Düzenleyici</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-container>
+            <button mat-icon-button
+                    class="remove-permission-button"
+                    (click)="revokePermission(share)"
+                    [disabled]="isProcessing"
+                    [matTooltip]="share.status === permissionStatus.Pending ? 'Davetiyeyi İptal Et' : 'Erişimi Kaldır'"
+                    aria-label="İzni kaldır veya davetiyeyi iptal et">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </mat-list-item>
+        <mat-divider class="list-item-divider"></mat-divider>
+      </mat-list>
+    </div>
+  </div>
+
+  <div mat-dialog-actions align="end" class="dialog-footer-actions">
+    <button mat-button (click)="onNoClick()">Kapat</button>
+  </div>
+</div>

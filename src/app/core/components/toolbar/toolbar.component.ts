@@ -1,8 +1,11 @@
 import { Component, Output, EventEmitter, ViewChild, ElementRef, HostListener, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ShareDialogComponent, ShareDialogData } from '../../components/share-dialog/share-dialog.component'; // Yeni dialog component'i
 
-const FONT_SIZES = ['8px','9px','10px','12px','14px','16px','20px','24px','32px','42px','54px','68px','84px','98px'];
+
+const FONT_SIZES = ['8px', '9px', '10px', '12px', '14px', '16px', '20px', '24px', '32px', '42px', '54px', '68px', '84px', '98px'];
 
 const FONT_STYLES_CONFIG = [
   { name: 'Arial', value: 'arial, sans-serif' },
@@ -21,7 +24,8 @@ const FONT_STYLES_CONFIG = [
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [ CommonModule, FormsModule ],
+  imports: [CommonModule, FormsModule, MatDialogModule,
+    ShareDialogComponent],
   templateUrl: './toolbar.component.html',
   styleUrls: ['./toolbar.component.scss']
 })
@@ -41,6 +45,8 @@ export class ToolbarComponent implements OnChanges {
   public cols = Array(6);
   public isColorPickerOpen: boolean = false;
 
+  @Output() shareDocumentClick = new EventEmitter<void>();
+
   @ViewChild('fontSizeInputEl') fontSizeInputEl!: ElementRef<HTMLInputElement>;
 
   menuOpen: string | null = null;
@@ -59,10 +65,10 @@ export class ToolbarComponent implements OnChanges {
   @Output() underline = new EventEmitter<void>();
   @Output() link = new EventEmitter<void>();
   @Output() insertTable = new EventEmitter<void>();
-  @Output() tableInsertWithSize = new EventEmitter<{rows: number, cols: number}>();
+  @Output() tableInsertWithSize = new EventEmitter<{ rows: number, cols: number }>();
   @Output() fontSelected = new EventEmitter<string>();
 
-  constructor(private elementRef: ElementRef) {}
+  constructor(private elementRef: ElementRef, public dialog: MatDialog) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['currentSelectionFormat']) {
@@ -87,12 +93,12 @@ export class ToolbarComponent implements OnChanges {
   displaySelectedFontSize(): string {
     const size = this.currentSelectionFormat?.['size'];
     if (size === 'MIXED_VALUES') {
-        return '';
+      return '';
     }
     if (size && typeof size === 'string') {
       const numericPart = size.replace('px', '');
       if (!isNaN(parseFloat(numericPart))) {
-          return numericPart;
+        return numericPart;
       }
     }
     return 'Size';
@@ -113,7 +119,7 @@ export class ToolbarComponent implements OnChanges {
     if (containerElement && !containerElement.contains(target)) {
       this.isSizeDropdownOpen = false;
       if (this.customSizeInputActive) {
-          this.customSizeInputActive = false;
+        this.customSizeInputActive = false;
       }
     }
   }
@@ -141,14 +147,18 @@ export class ToolbarComponent implements OnChanges {
 
   handleMenuOption(option: string): void {
     switch (option) {
-        case 'insert-new-page': this.addNewPage.emit(); break;
-        case 'format-bold': this.onBoldClick(); break;
-        case 'format-italic': this.onItalicClick(); break;
-        case 'format-underline': this.onUnderlineClick(); break;
-        case 'insert-link': this.onLinkClick(); break;
-        case 'insert-table': this.insertTable.emit(); break;
-        default:
-            break;
+      case 'insert-new-page': this.addNewPage.emit(); break;
+      case 'format-bold': this.onBoldClick(); break;
+      case 'format-italic': this.onItalicClick(); break;
+      case 'format-underline': this.onUnderlineClick(); break;
+      case 'insert-link': this.onLinkClick(); break;
+      case 'insert-table': this.insertTable.emit(); break;
+      case 'share':
+        console.log('ToolbarComponent: Share menu option clicked, emitting shareDocumentClick event.'); // Kontrol için log
+        this.shareDocumentClick.emit();
+        break;
+      default:
+        break;
     }
     this.closeAllMenus();
   }
@@ -156,27 +166,27 @@ export class ToolbarComponent implements OnChanges {
   handleFontSizeDisplayClick(event: MouseEvent): void {
     event.stopPropagation();
     if (this.customSizeInputActive) {
-        this.isSizeDropdownOpen = !this.isSizeDropdownOpen;
+      this.isSizeDropdownOpen = !this.isSizeDropdownOpen;
     } else {
-        const currentSize = this.currentSelectionFormat?.['size'];
-        if (currentSize === 'MIXED_VALUES') {
-            this.sizeInputValue = '';
-        } else if (currentSize && typeof currentSize === 'string') {
-          const numericPart = currentSize.replace('px', '');
-          if (!isNaN(parseFloat(numericPart))) {
-            this.sizeInputValue = numericPart;
-          } else {
-            this.sizeInputValue = '';
-          }
+      const currentSize = this.currentSelectionFormat?.['size'];
+      if (currentSize === 'MIXED_VALUES') {
+        this.sizeInputValue = '';
+      } else if (currentSize && typeof currentSize === 'string') {
+        const numericPart = currentSize.replace('px', '');
+        if (!isNaN(parseFloat(numericPart))) {
+          this.sizeInputValue = numericPart;
         } else {
-            this.sizeInputValue = '';
+          this.sizeInputValue = '';
         }
-        this.customSizeInputActive = true;
-        this.isSizeDropdownOpen = true;
-        setTimeout(() => {
-          this.fontSizeInputEl?.nativeElement.focus();
-          this.fontSizeInputEl?.nativeElement.select();
-        }, 0);
+      } else {
+        this.sizeInputValue = '';
+      }
+      this.customSizeInputActive = true;
+      this.isSizeDropdownOpen = true;
+      setTimeout(() => {
+        this.fontSizeInputEl?.nativeElement.focus();
+        this.fontSizeInputEl?.nativeElement.select();
+      }, 0);
     }
   }
 
@@ -184,24 +194,24 @@ export class ToolbarComponent implements OnChanges {
     event.stopPropagation();
     this.isSizeDropdownOpen = !this.isSizeDropdownOpen;
     if (this.isSizeDropdownOpen && !this.customSizeInputActive) {
-        const currentSize = this.currentSelectionFormat?.['size'];
-         if (currentSize === 'MIXED_VALUES') {
-            this.sizeInputValue = '';
-        } else if (currentSize && typeof currentSize === 'string') {
-            const numericPart = currentSize.replace('px', '');
-             if (!isNaN(parseFloat(numericPart))) {
-                this.sizeInputValue = numericPart;
-            } else {
-                this.sizeInputValue = '';
-            }
+      const currentSize = this.currentSelectionFormat?.['size'];
+      if (currentSize === 'MIXED_VALUES') {
+        this.sizeInputValue = '';
+      } else if (currentSize && typeof currentSize === 'string') {
+        const numericPart = currentSize.replace('px', '');
+        if (!isNaN(parseFloat(numericPart))) {
+          this.sizeInputValue = numericPart;
         } else {
-            this.sizeInputValue = '';
+          this.sizeInputValue = '';
         }
-        this.customSizeInputActive = true;
-        setTimeout(() => {
-          this.fontSizeInputEl?.nativeElement.focus();
-          this.fontSizeInputEl?.nativeElement.select();
-        }, 0);
+      } else {
+        this.sizeInputValue = '';
+      }
+      this.customSizeInputActive = true;
+      setTimeout(() => {
+        this.fontSizeInputEl?.nativeElement.focus();
+        this.fontSizeInputEl?.nativeElement.select();
+      }, 0);
     }
   }
 
@@ -217,25 +227,25 @@ export class ToolbarComponent implements OnChanges {
 
     const numericSize = parseFloat(this.sizeInputValue);
     if (this.sizeInputValue.trim() === '') {
-        this.sizeSelected.emit('');
+      this.sizeSelected.emit('');
     } else if (!isNaN(numericSize) && numericSize >= 1 && numericSize <= 200) {
-        const newSize = `${numericSize}px`;
-        this.sizeSelected.emit(newSize);
+      const newSize = `${numericSize}px`;
+      this.sizeSelected.emit(newSize);
     } else {
-        alert("Invalid size. Please enter a number between 1 and 200.");
-        const currentSize = this.currentSelectionFormat?.['size'];
-        if (currentSize === 'MIXED_VALUES') {
-            this.sizeInputValue = '';
-        } else if (currentSize && typeof currentSize === 'string') {
-            const numericPart = currentSize.replace('px', '');
-            if (!isNaN(parseFloat(numericPart))) {
-                this.sizeInputValue = numericPart;
-            } else {
-                this.sizeInputValue = '';
-            }
+      alert("Invalid size. Please enter a number between 1 and 200.");
+      const currentSize = this.currentSelectionFormat?.['size'];
+      if (currentSize === 'MIXED_VALUES') {
+        this.sizeInputValue = '';
+      } else if (currentSize && typeof currentSize === 'string') {
+        const numericPart = currentSize.replace('px', '');
+        if (!isNaN(parseFloat(numericPart))) {
+          this.sizeInputValue = numericPart;
         } else {
-            this.sizeInputValue = '';
+          this.sizeInputValue = '';
         }
+      } else {
+        this.sizeInputValue = '';
+      }
     }
   }
 
@@ -244,16 +254,16 @@ export class ToolbarComponent implements OnChanges {
     this.isSizeDropdownOpen = false;
     const currentSize = this.currentSelectionFormat?.['size'];
     if (currentSize === 'MIXED_VALUES') {
-        this.sizeInputValue = '';
+      this.sizeInputValue = '';
     } else if (currentSize && typeof currentSize === 'string' && currentSize !== 'MIXED_VALUES') {
-        const numericPart = currentSize.replace('px', '');
-        if (!isNaN(parseFloat(numericPart))) {
-            this.sizeInputValue = numericPart;
-        } else {
-            this.sizeInputValue = '';
-        }
+      const numericPart = currentSize.replace('px', '');
+      if (!isNaN(parseFloat(numericPart))) {
+        this.sizeInputValue = numericPart;
+      } else {
+        this.sizeInputValue = '';
+      }
     } else {
-         this.sizeInputValue = '';
+      this.sizeInputValue = '';
     }
   }
   onColorInputChange(event: Event): void {
@@ -308,4 +318,6 @@ export class ToolbarComponent implements OnChanges {
   onItalicClick(): void { this.italic.emit(); }
   onUnderlineClick(): void { this.underline.emit(); }
   onLinkClick(): void { this.link.emit(); }
+
 }
+

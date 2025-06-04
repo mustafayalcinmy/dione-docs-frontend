@@ -6,23 +6,25 @@ import { map, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import {
   QuillDelta,
-  
+
   DocumentPayload,
   DocumentResponseFromAPI,
   DocumentListResponseFromAPI,
   CombinedDocumentList
 } from '../dto/document.dto';
+import { PermissionResponseFromAPI, MessageResponse } from '../dto/permission.dto';
 import { Op } from 'quill-delta';
 @Injectable({
   providedIn: 'root'
 })
 export class DocumentService {
   private readonly API_URL = 'http://127.0.0.1:8080/api/v1/documents';
+  private readonly API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
 
   constructor(
     private http: HttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   private getAuthHeaders(): HttpHeaders {
     const token = this.authService.getToken();
@@ -44,7 +46,7 @@ export class DocumentService {
           const bytes = Uint8Array.from(binaryString, char => char.charCodeAt(0));
           decodedJsonString = new TextDecoder('utf-8').decode(bytes);
         } else {
-            // Node.js ortamı için zaten UTF-8 destekli
+          // Node.js ortamı için zaten UTF-8 destekli
           decodedJsonString = Buffer.from(response.content, 'base64').toString('utf-8');
         }
 
@@ -80,8 +82,8 @@ export class DocumentService {
 
     // Temel alanların varlığını kontrol et ve varsayılan değerler ata (gerekirse)
     if (!response.id || typeof response.title === 'undefined' || !response.owner_id) {
-        console.error('mapResponseToPayload - API yanıtında zorunlu alanlar eksik:', response);
-        // Burada hata fırlatabilir veya kısmi bir payload döndürebilirsin. Şimdilik logluyoruz.
+      console.error('mapResponseToPayload - API yanıtında zorunlu alanlar eksik:', response);
+      // Burada hata fırlatabilir veya kısmi bir payload döndürebilirsin. Şimdilik logluyoruz.
     }
 
     return {
@@ -98,6 +100,8 @@ export class DocumentService {
     };
   }
 
+
+
   // createDocument, getDocument, updateDocument, getUserDocuments metodları
   // mapResponseToPayload'u kullandığı için bu değişiklikten otomatik olarak faydalanacaktır.
   // Bu metodlarda ekstra bir değişiklik gerekmez.
@@ -108,19 +112,19 @@ export class DocumentService {
       description: description,
       is_public: isPublic,
       content: JSON.stringify(contentDelta) // Backend'e giderken base64 kodlama YAPILMAZ, JSON string olarak gider.
-                                             // Backend, json.RawMessage veya []byte olarak alır.
-                                             // Eğer []byte ise, jsonb'ye yazılırken db driver'ı base64 encode ETMEMELİDİR.
-                                             // EĞER backend `[]byte` alıp bunu base64 OLARAK BEKLİYORSA, o zaman frontend'de encode gerekir.
-                                             // Ama "illegal base64 data" hatası OKURKEN olduğuna göre, backend YAZARKEN base64 yazmıyor,
-                                             // OKURKEN []byte'ı base64 OLARAK GÖNDERİYOR.
+      // Backend, json.RawMessage veya []byte olarak alır.
+      // Eğer []byte ise, jsonb'ye yazılırken db driver'ı base64 encode ETMEMELİDİR.
+      // EĞER backend `[]byte` alıp bunu base64 OLARAK BEKLİYORSA, o zaman frontend'de encode gerekir.
+      // Ama "illegal base64 data" hatası OKURKEN olduğuna göre, backend YAZARKEN base64 yazmıyor,
+      // OKURKEN []byte'ı base64 OLARAK GÖNDERİYOR.
     };
     console.log('createDocument payload gönderiliyor:', payload);
     return this.http.post<DocumentResponseFromAPI>(this.API_URL, payload, { headers: this.getAuthHeaders() })
       .pipe(
         map(this.mapResponseToPayload),
         catchError(err => {
-            console.error('createDocument servisinde HTTP veya map hatası:', err);
-            return throwError(() => err);
+          console.error('createDocument servisinde HTTP veya map hatası:', err);
+          return throwError(() => err);
         })
       );
   }
@@ -130,8 +134,8 @@ export class DocumentService {
       .pipe(
         map(this.mapResponseToPayload),
         catchError(err => {
-            console.error('getDocument servisinde HTTP veya map hatası:', err);
-            return throwError(() => err);
+          console.error('getDocument servisinde HTTP veya map hatası:', err);
+          return throwError(() => err);
         })
       );
   }
@@ -157,9 +161,9 @@ export class DocumentService {
       .pipe(
         map(this.mapResponseToPayload),
         catchError(err => {
-            console.error('updateDocument servisinde HTTP veya map hatası:', err);
-            const backendError = err.error?.error || err.message || 'Bilinmeyen bir güncelleme hatası oluştu.';
-            return throwError(() => new Error(backendError));
+          console.error('updateDocument servisinde HTTP veya map hatası:', err);
+          const backendError = err.error?.error || err.message || 'Bilinmeyen bir güncelleme hatası oluştu.';
+          return throwError(() => new Error(backendError));
         })
       );
   }
@@ -185,8 +189,8 @@ export class DocumentService {
           };
         }),
         catchError(err => {
-            console.error('getUserDocuments servisinde HTTP veya map hatası:', err);
-            return throwError(() => err);
+          console.error('getUserDocuments servisinde HTTP veya map hatası:', err);
+          return throwError(() => err);
         })
       );
   }
@@ -194,8 +198,89 @@ export class DocumentService {
     return this.http.delete<void>(`${this.API_URL}/${docId}`, { headers: this.getAuthHeaders() })
       .pipe(
         catchError(err => {
-            console.error('deleteDocument servisinde HTTP hatası:', err);
-            return throwError(() => err);
+          console.error('deleteDocument servisinde HTTP hatası:', err);
+          return throwError(() => err);
+        })
+      );
+  }
+
+
+  inviteUserToDocument(docId: string, userEmail: string, accessType: 'viewer' | 'editor'): Observable<PermissionResponseFromAPI> {
+    const payload = {
+      user_email: userEmail,
+      access_type: accessType
+    };
+    return this.http.post<PermissionResponseFromAPI>(`${this.API_URL}/${docId}/permissions/share`, payload, { headers: this.getAuthHeaders() })
+      .pipe(
+        catchError(err => {
+          console.error('inviteUserToDocument servisinde HTTP hatası:', err);
+          return throwError(() => err);
+        })
+      );
+  }
+
+  getDocumentShares(docId: string): Observable<PermissionResponseFromAPI[]> {
+    return this.http.get<PermissionResponseFromAPI[]>(`${this.API_URL}/${docId}/permissions`, { headers: this.getAuthHeaders() })
+      .pipe(
+        catchError(err => {
+          console.error('getDocumentShares servisinde HTTP hatası:', err);
+          return throwError(() => err);
+        })
+      );
+  }
+
+  updatePermission(permissionId: string, newAccessType: 'viewer' | 'editor'): Observable<MessageResponse> {
+    // **ÖNEMLİ NOT:** Bu metodun çalışması için backend'de
+    // `PUT /api/v1/permissions/:permissionId` gibi bir endpoint'e ve ilgili handler'a ihtiyacınız var.
+    // Bu endpoint, `{ "access_type": "new_type" }` şeklinde bir body almalıdır.
+    // Mevcut backend router'ınızda bu endpoint henüz tanımlı değil.
+    console.warn(`updatePermission çağrıldı, ancak backend'de PUT ${this.API_BASE_URL}/permissions/${permissionId} endpoint'i tanımlı olmalıdır.`);
+    return this.http.put<MessageResponse>(`${this.API_BASE_URL}/permissions/${permissionId}`, { access_type: newAccessType }, { headers: this.getAuthHeaders() })
+      .pipe(
+        catchError(err => {
+          console.error('updatePermission servisinde HTTP hatası:', err);
+          // Kullanıcıya daha anlamlı bir hata mesajı gösterilebilir.
+          return throwError(() => new Error(`İzin güncellenemedi. Backend endpoint'i (${this.API_BASE_URL}/permissions/${permissionId}) kontrol edin.`));
+        })
+      );
+  }
+
+  revokePermission(docId: string, userEmail: string): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.API_URL}/${docId}/permissions/remove`, { user_email: userEmail }, { headers: this.getAuthHeaders() })
+      .pipe(
+        catchError(err => {
+          console.error('revokePermission servisinde HTTP hatası:', err);
+          return throwError(() => err);
+        })
+      );
+  }
+
+  getPendingInvitations(): Observable<any[]> { // DTO'yu backend yanıtına göre güncelleyin (InvitationDetailResponse gibi)
+    return this.http.get<any[]>(`${this.API_BASE_URL}/invitations/pending`, { headers: this.getAuthHeaders() })
+      .pipe(
+        catchError(err => {
+          console.error('getPendingInvitations servisinde HTTP hatası:', err);
+          return throwError(() => err);
+        })
+      );
+  }
+
+  acceptInvitation(invitationId: string): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.API_BASE_URL}/invitations/${invitationId}/accept`, {}, { headers: this.getAuthHeaders() })
+      .pipe(
+        catchError(err => {
+          console.error('acceptInvitation servisinde HTTP hatası:', err);
+          return throwError(() => err);
+        })
+      );
+  }
+
+  rejectInvitation(invitationId: string): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.API_BASE_URL}/invitations/${invitationId}/reject`, {}, { headers: this.getAuthHeaders() })
+      .pipe(
+        catchError(err => {
+          console.error('rejectInvitation servisinde HTTP hatası:', err);
+          return throwError(() => err);
         })
       );
   }
