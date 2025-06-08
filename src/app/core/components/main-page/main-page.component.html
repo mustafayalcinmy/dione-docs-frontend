@@ -1,9 +1,8 @@
 <div class="header">
     <div class="header-container">
-        <div></div> <div class="search-doc">
-            <input type="search"
-                   placeholder="Dökümanlarda Ara..."
-                   (keyup)="applyFilter($event)" #searchInput>
+        <div></div>
+        <div class="search-doc">
+            <input type="search" placeholder="Dökümanlarda Ara..." (keyup)="applyFilter($event)" #searchInput>
             <button type="button" mat-icon-button aria-label="Search documents">
                 <mat-icon>search</mat-icon>
             </button>
@@ -28,26 +27,50 @@
                 <span class="new-doc-text">Yeni Döküman Oluştur</span>
             </div>
 
-            <div class="doc"
-                 *ngFor="let doc of recentDocuments"
-                 (click)="openDocument(doc)"
-                 matRipple
-                 [title]="doc.title">
+            <div class="doc" *ngFor="let doc of recentDocuments" (click)="openDocument(doc)" matRipple
+                [title]="doc.title">
                 <span class="doc-name">{{ doc.title }}</span>
-                </div>
+            </div>
         </div>
         <ng-template #noRecentDocs>
             <div class="docs">
-                 <div class="doc new-doc-placeholder" (click)="new_document()" matRipple>
+                <div class="doc new-doc-placeholder" (click)="new_document()" matRipple>
                     <mat-icon class="new-doc-icon">add_circle_outline</mat-icon>
                     <span class="new-doc-text">Yeni Döküman Oluştur</span>
                 </div>
-                <div class="doc placeholder-doc disabled-doc" *ngFor="let i of [1,2,3,4]" [title]="'Son kullanılan doküman bulunamadı. Yeni bir tane oluşturun veya mevcut dokümanlarınızı açın.'">
+                <div class="doc placeholder-doc disabled-doc" *ngFor="let i of [1,2,3,4]"
+                    [title]="'Son kullanılan doküman bulunamadı. Yeni bir tane oluşturun veya mevcut dokümanlarınızı açın.'">
                     <mat-icon class="placeholder-icon">insert_drive_file</mat-icon>
                     <span class="placeholder-text">Yer Tutucu {{i}}</span>
                 </div>
             </div>
         </ng-template>
+    </div>
+</div>
+
+<div *ngIf="!isLoading && pendingInvitations && pendingInvitations.length > 0" class="invitations-container">
+    <div class="invitations-header">
+        <span>Bekleyen Davetiyeler ({{ pendingInvitations.length }})</span>
+    </div>
+    <div class="invitations-list">
+        <div class="invitation-card" *ngFor="let inv of pendingInvitations">
+            <div class="invitation-icon">
+                <mat-icon>mail_outline</mat-icon>
+            </div>
+            <div class="invitation-details">
+                <div class="invitation-title" [title]="inv.document_title">{{ inv.document_title }}</div>
+                <div class="invitation-meta">
+                    <span title="Davet Eden">{{ inv.shared_by_email }}</span>
+                    <span class="access-badge">{{ inv.access_type | titlecase }}</span>
+                </div>
+            </div>
+            <div class="invitation-actions">
+                <button mat-flat-button color="primary" (click)="onAccept(inv.invitation_id)"
+                    [disabled]="isProcessingInvitation">Kabul Et</button>
+                <button mat-stroked-button color="warn" (click)="onReject(inv.invitation_id)"
+                    [disabled]="isProcessingInvitation">Reddet</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -60,7 +83,8 @@
             <ng-container matColumnDef="favorite">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> Favori </th>
                 <td mat-cell *matCellDef="let element">
-                    <button mat-icon-button (click)="toggleFavorite(element); $event.stopPropagation();" [attr.aria-label]="element.favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'">
+                    <button mat-icon-button (click)="toggleFavorite(element); $event.stopPropagation();"
+                        [attr.aria-label]="element.favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'">
                         <mat-icon [style.color]="element.favorite ? 'red' : 'grey'">
                             {{ element.favorite ? 'favorite' : 'favorite_border' }}
                         </mat-icon>
@@ -70,7 +94,8 @@
 
             <ng-container matColumnDef="name">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> İsim </th>
-                <td mat-cell *matCellDef="let element" (click)="openDocument(element)" style="cursor: pointer;" [title]="element.title"> {{element.title}} </td>
+                <td mat-cell *matCellDef="let element" (click)="openDocument(element)" style="cursor: pointer;"
+                    [title]="element.title"> {{element.title}} </td>
             </ng-container>
 
             <ng-container matColumnDef="lastUpdate">
@@ -86,10 +111,12 @@
             <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef> İşlemler </th>
                 <td mat-cell *matCellDef="let element">
-                    <button mat-icon-button (click)="editDocument(element); $event.stopPropagation();" matTooltip="Düzenle" aria-label="Düzenle">
+                    <button mat-icon-button (click)="editDocument(element); $event.stopPropagation();"
+                        matTooltip="Düzenle" aria-label="Düzenle">
                         <mat-icon>edit</mat-icon>
                     </button>
-                    <button mat-icon-button (click)="deleteDocument(element.id); $event.stopPropagation();" matTooltip="Sil" aria-label="Sil">
+                    <button mat-icon-button (click)="deleteDocument(element.id); $event.stopPropagation();"
+                        matTooltip="Sil" aria-label="Sil">
                         <mat-icon>delete</mat-icon>
                     </button>
                 </td>
@@ -106,16 +133,14 @@
                     <ng-container *ngIf="!searchInput.value && allUserDocuments.length === 0 && !isLoading">
                         Hiç doküman bulunmuyor. Yeni bir tane oluşturun!
                     </ng-container>
-                     <ng-container *ngIf="searchInput.value && allUserDocuments.length === 0 && !isLoading">
+                    <ng-container *ngIf="searchInput.value && allUserDocuments.length === 0 && !isLoading">
                         Filtreyle eşleşen veri bulunamadı "{{searchInput.value}}"
                     </ng-container>
                 </td>
             </tr>
         </table>
 
-        <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]"
-                       showFirstLastButtons
-                       aria-label="Select page of documents">
+        <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" showFirstLastButtons aria-label="Select page of documents">
         </mat-paginator>
     </div>
 </div>

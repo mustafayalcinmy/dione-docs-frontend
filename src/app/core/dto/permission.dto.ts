@@ -16,7 +16,16 @@ export interface PermissionResponseFromAPI {
   updated_at: string;
 }
 
-// Mesaj yanıtları için genel bir arayüz (backend'deki MessageResponse)
 export interface MessageResponse {
   message: string;
+}
+
+export interface InvitationDetailResponse {
+  invitation_id: string;
+  document_id: string;
+  document_title: string;
+  shared_by_email: string;
+  access_type: 'viewer' | 'editor' | 'admin';
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
 }

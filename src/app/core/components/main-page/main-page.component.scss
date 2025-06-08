@@ -268,3 +268,83 @@ td.mat-cell button[mat-icon-button] {
     font-style: italic;
     color: #757575;
 }
+
+
+.invitations-container {
+  background-color: #fff8e1; // Hafif sarımsı bir arka plan
+  color: #282828;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ffecb3;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1200px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.invitations-header {
+  margin-bottom: 20px;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #4e342e; // Koyu kahve tonu
+}
+
+.invitations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.invitation-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  transition: box-shadow 0.2s ease-in-out;
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .invitation-icon mat-icon {
+    font-size: 28px;
+    color: #8d6e63; // Kahve tonu
+  }
+
+  .invitation-details {
+    flex-grow: 1;
+
+    .invitation-title {
+      font-weight: 500;
+      font-size: 1rem;
+      color: #333;
+    }
+
+    .invitation-meta {
+      font-size: 0.85rem;
+      color: #757575;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    
+    .access-badge {
+      background-color: #e0e0e0;
+      color: #333;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+  }
+
+  .invitation-actions {
+    display: flex;
+    gap: 10px;
+  }
+}

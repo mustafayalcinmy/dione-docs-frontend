@@ -1,5 +1,6 @@
 // Path: dione-docs-frontend/src/app/core/components/main-page/main-page.component.ts
-import { Component, ViewChild, OnInit, ChangeDetectorRef } from '@angular/core'; // AfterViewInit'i kaldırdık, setter kullanacağız
+
+import { Component, ViewChild, OnInit } from '@angular/core';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -8,11 +9,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../services/auth.service'; // Kullanılmıyorsa kaldırılabilir
 import { CommonModule } from '@angular/common';
 import { MatRippleModule } from '@angular/material/core';
 import { DocumentService } from '../../services/document.service';
 import { DocumentPayload, CombinedDocumentList } from '../../dto/document.dto';
+import { forkJoin } from 'rxjs';
+import { InvitationDetailResponse } from '../../dto/permission.dto';
 
 @Component({
   selector: 'app-main-page',
@@ -37,89 +39,61 @@ export class MainPageComponent implements OnInit {
   dataSource: MatTableDataSource<DocumentPayload>;
   recentDocuments: DocumentPayload[] = [];
   allUserDocuments: DocumentPayload[] = [];
-  isLoading: boolean = true; // Başlangıçta true
+  pendingInvitations: InvitationDetailResponse[] = [];
+  
+  isLoading = true;
+  isProcessingInvitation = false;
 
-  // Paginator için ViewChild setter'ı
-  private _paginator!: MatPaginator;
-  @ViewChild(MatPaginator) set paginator(paginatorInstance: MatPaginator) {
-    if (paginatorInstance) {
-      this._paginator = paginatorInstance;
-      this.dataSource.paginator = this._paginator;
-      console.log('Paginator ViewChild setter ile atandı:', this._paginator);
-      // Veri zaten yüklüyse ve paginator yeni ayarlandıysa ilk sayfaya git
-      if (this.dataSource.data.length > 0) {
-         // this._paginator.firstPage(); // Bu bazen change detection sorunlarına yol açabilir, subscribe içindeki daha iyi olabilir
-      }
-    }
-  }
-  get paginator(): MatPaginator {
-    return this._paginator;
-  }
-
-  // Sort için ViewChild setter'ı
-  private _sort!: MatSort;
-  @ViewChild(MatSort) set sort(sortInstance: MatSort) {
-    if (sortInstance) {
-      this._sort = sortInstance;
-      this.dataSource.sort = this._sort;
-      console.log('Sort ViewChild setter ile atandı:', this._sort);
-    }
-  }
-  get sort(): MatSort {
-    return this._sort;
-  }
+  @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     private router: Router,
     private documentService: DocumentService,
-    private changeDetectorRef: ChangeDetectorRef // Gerekliyse kullanmaya devam et
   ) {
     this.dataSource = new MatTableDataSource<DocumentPayload>([]);
   }
 
   ngOnInit(): void {
-    console.log('MainPageComponent OnInit çağrıldı.');
-    this.loadUserDocuments();
+    this.loadAllData();
   }
 
-  loadUserDocuments(): void {
-    console.log('loadUserDocuments çağrıldı.');
-    this.isLoading = true; // Paginator ve tablo DOM'dan kalkar
-    this.documentService.getUserDocuments().subscribe({
-      next: (data: CombinedDocumentList) => {
-        this.allUserDocuments = [...data.owned, ...data.shared].map(doc => ({
-          ...doc,
-          favorite: (doc as any).favorite || false
-        }));
-        
-        this.recentDocuments = data.recent.map(doc => ({
-          ...doc,
-          favorite: (doc as any).favorite || false
-        }));
+  /**
+   * Hem kullanıcı dokümanlarını hem de bekleyen davetiyeleri paralel olarak yükler.
+   * Yükleme tamamlandığında veya hata oluştuğunda arayüzü günceller.
+   */
+  loadAllData(): void {
+    this.isLoading = true;
 
+    forkJoin({
+      documents: this.documentService.getUserDocuments(),
+      invitations: this.documentService.getPendingInvitations()
+    }).subscribe({
+      next: (results) => {
+        // Doküman verilerini işle
+        const docData = results.documents;
+        this.allUserDocuments = [...docData.owned, ...docData.shared].map(doc => ({
+          ...doc,
+          favorite: (doc as any).favorite || false
+        }));
+        this.recentDocuments = docData.recent;
+        
+        // Tablo verisini ayarla
         this.dataSource.data = this.allUserDocuments;
-        this.isLoading = false; // Paginator ve tablo DOM'a eklenir, setter'lar tetiklenir
-
-        // isLoading false olduktan ve DOM güncellendikten sonra paginator'ın ayarlanmış olması gerekir.
-        // Bu noktada `firstPage` çağırmak daha güvenli olabilir.
-        // Angular'ın değişiklikleri işlemesi için küçük bir gecikme gerekebilir.
-        setTimeout(() => {
-            if (this.dataSource.paginator && this.dataSource.data.length > 0) {
-                this.dataSource.paginator.firstPage();
-                console.log('Paginator.firstPage() çağrıldı (subscribe next içinde).');
-            }
-        }, 0);
+        this.dataSource.paginator = this.paginator;
+        this.dataSource.sort = this.sort;
         
-        // changeDetectorRef.detectChanges(); // isLoading değiştiği için Angular zaten change detection çalıştırır. Genelde gerekmez.
+        // Davetiye verilerini işle
+        this.pendingInvitations = results.invitations as InvitationDetailResponse[];
+        
+        this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error fetching user documents:', err);
-        this.isLoading = false; // Hata durumunda da loading'i kapat
+        console.error('Veri yüklenirken bir hata oluştu:', err);
+        this.isLoading = false; // Hata durumunda yükleniyor ekranını kapat
       }
     });
   }
-
-  // ngAfterViewInit'i bu strateji için kaldırdık.
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
@@ -137,32 +111,51 @@ export class MainPageComponent implements OnInit {
   openDocument(doc: DocumentPayload) {
     if (doc.id) {
       this.router.navigate(['/document', doc.id]);
-    } else {
-       console.warn('Document ID is missing. Cannot open.');
     }
   }
 
   editDocument(doc: DocumentPayload) {
-     this.openDocument(doc);
+    this.openDocument(doc);
   }
 
-  deleteDocument(docId: string) {
-     console.log('Deleting document:', docId);
-     this.documentService.deleteDocument(docId).subscribe({
-       next: () => {
-         console.log('Document deleted successfully:', docId);
-         this.loadUserDocuments(); // Yenileme işlemi
-       },
-       error: (err) => {
-         console.error('Error deleting document:', err);
-        }
+  deleteDocument(docId: string | undefined) {
+    if (!docId) return;
+    if (confirm('Bu dokümanı silmek istediğinizden emin misiniz?')) {
+      this.documentService.deleteDocument(docId).subscribe({
+        next: () => this.loadAllData(),
+        error: (err) => alert(`Doküman silinirken bir hata oluştu: ${err.message}`)
       });
+    }
   }
 
-    toggleFavorite(doc: DocumentPayload) {
+  toggleFavorite(doc: DocumentPayload) {
     (doc as any).favorite = !(doc as any).favorite;
-    this.dataSource.data = [...this.dataSource.data]; // Trigger change detection for the table
-    console.log('Toggled favorite for:', doc.id, 'to', (doc as any).favorite);
-    // TODO: Backend'e favori durumunu kaydetmek için servis çağrısı
+    this.dataSource.data = [...this.allUserDocuments]; // Değişikliği yansıtmak için referansı güncelle
+  }
+  
+  onAccept(invitationId: string): void {
+    this.isProcessingInvitation = true;
+    this.documentService.acceptInvitation(invitationId).subscribe({
+      next: (res) => {
+        alert(res.message || 'Davetiye başarıyla kabul edildi!');
+        this.loadAllData(); // Tüm veriyi yenile
+      },
+      error: (err) => {
+        alert(`Bir hata oluştu: ${err.error?.error || 'Davetiye kabul edilemedi.'}`);
+      }
+    }).add(() => this.isProcessingInvitation = false); // Her durumda (başarı/hata) butonu aktif et
+  }
+
+  onReject(invitationId: string): void {
+    this.isProcessingInvitation = true;
+    this.documentService.rejectInvitation(invitationId).subscribe({
+      next: (res) => {
+        alert(res.message || 'Davetiye reddedildi.');
+        this.loadAllData(); // Tüm veriyi yenile
+      },
+      error: (err) => {
+        alert(`Bir hata oluştu: ${err.error?.error || 'Davetiye reddedilemedi.'}`);
+      }
+    }).add(() => this.isProcessingInvitation = false); // Her durumda (başarı/hata) butonu aktif et
   }
 }
