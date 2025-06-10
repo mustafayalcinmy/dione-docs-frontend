@@ -1,193 +1,307 @@
-// In dione-docs-frontend/src/app/core/components/main-page/main-page.component.scss
+$brand-red: #FF6B6B;
+$brand-red-dark: #cc241d;
+$brand-green: #98971a;
+$brand-green-dark: #79740e;
+$soft-border: #e0e0e0;
+$light-background: #f9f9f9;
+$dark-text: #282828;
+$medium-text: #555;
+$light-text: #777;
+
 .header {
-    width: 100%;
-    padding: 12px 0; // Yatay padding'i header-container'a bırak
-    text-align: center;
-    background-color:#f5f5f5;
-    border-bottom: 2px solid #e0e0e0; // Daha yumuşak bir renk
-    box-sizing: border-box;
+  width: 100%;
+  padding: 12px 0;
+  text-align: center;
+  background-color: #f5f5f5;
+  border-bottom: 2px solid #e0e0e0;
+  box-sizing: border-box;
 }
 
 .header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 20px; // Kenar boşlukları
-    font-size: 24px;
-    width: 100%; // Tam genişlik
-    max-width: 1200px; // Maksimum genişlik, büyük ekranlarda ortalamak için
-    margin: 0 auto;
-    box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 20px;
+  font-size: 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .add-button {
-    display: flex;
-    align-items: center;
-    padding: 8px 16px;
-    border-radius: 8px;
-    background-color: #FF6B6B; // Gruvbox red
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: #FF6B6B;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 
-    &:hover {
-        background-color: #FF4F4F; // Biraz daha koyu
-    }
+  &:hover {
+    background-color: #FF4F4F;
+  }
 
-    .add-circle { // mat-icon için stil
-        font-size: 24px; // İkon boyutu
-        width: 24px;
-        height: 24px;
-        margin-right: 8px; // Metinle arasında boşluk
-    }
-    .add-button-text {
-        font-size: 1rem;
-        font-weight: 500;
-    }
+  .add-circle {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+  }
+
+  .add-button-text {
+    font-size: 1rem;
+    font-weight: 500;
+  }
 }
 
 
 .search-doc {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  margin: 0 20px;
+  max-width: 500px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  padding: 4px 8px;
+  box-sizing: border-box;
+
+  input {
+    flex-grow: 1;
+    padding: 8px;
+    font-size: 1rem;
+    border: none;
+    outline: none;
+    color: #282828;
+  }
+
+  button {
+    color: #555;
+
+    &:hover {
+      color: #FF6B6B;
+    }
+  }
+}
+
+.notifications-area {
+  position: relative;
+
+  .notification-badge {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    background-color: #FF6B6B;
+    color: white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    font-weight: bold;
     display: flex;
     align-items: center;
-    width: 40%;
-    max-width: 400px; // Maksimum arama çubuğu genişliği
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #fff;
-    padding: 4px 8px; // İç boşluk
-    box-sizing: border-box;
+    justify-content: center;
+    border: 2px solid #f5f5f5;
+  }
+}
 
-    input {
-        flex-grow: 1; // Alanı doldur
-        padding: 8px; // Girdi alanı iç boşluğu
-        font-size: 1rem;
-        border: none;
-        outline: none;
-        color: #282828;
+.notifications-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  cursor: pointer;
+}
+
+.notifications-sidebar {
+  position: fixed;
+  top: 0;
+  right: -380px;
+  width: 370px;
+  height: 100%;
+  background-color: #ffffff;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  transition: right 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+
+  &.open {
+    right: 0;
+  }
+
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid $soft-border;
+    flex-shrink: 0;
+
+    h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: $dark-text;
+    }
+  }
+
+  .sidebar-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .no-invitations {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: $light-text;
+    text-align: center;
+    padding: 20px;
+    opacity: 0.8;
+
+    mat-icon {
+      font-size: 72px;
+      width: 72px;
+      height: 72px;
+      margin-bottom: 16px;
     }
 
-    button { // mat-icon-button için stil
-        color: #555;
-        &:hover {
-            color: #FF6B6B;
-        }
+    p {
+      font-size: 1rem;
     }
+  }
+}
+
+.invitations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .recent-docs {
-    background-color: #ffffff; // Arka planı beyaz yapalım
-    color: #282828;
-    margin: 20px auto; // Üst/alt ve otomatik yatay margin
-    padding: 20px;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 1200px; // Ana konteyner ile aynı hizada
-    box-sizing: border-box;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background-color: #ffffff;
+  color: #282828;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1200px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .recent-docs-header {
-    margin-bottom: 20px;
-    font-size: 1.25rem; // Biraz daha büyük
-    font-weight: 500;  // Biraz daha kalın
-    color: #333;
+  margin-bottom: 20px;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #333;
 }
 
 .docs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px; // Kartlar arası boşluk
-    // justify-content: center; // Eğer kartlar tam dolmuyorsa ortala
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .recent-docs .doc {
-    width: 208px; // Sabit genişlik
-    height: 288px; // Sabit yükseklik
-    background-color: #fff;
-    border: 1px solid #ddd; // Daha yumuşak border
-    margin: 0; // Gap ile yönetildiği için margin'i kaldır
-    display: flex;
-    flex-direction: column; // İçeriği dikey sırala
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    text-align: center;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-    padding: 15px; // İç boşluk
-    box-sizing: border-box;
+  width: 208px;
+  height: 288px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  text-align: center;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  padding: 15px;
+  box-sizing: border-box;
 
-    &:hover {
-        transform: translateY(-5px) scale(1.03); // Hafif yukarı kalkma efekti
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
-    }
+  &:hover {
+    transform: translateY(-5px) scale(1.03);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+  }
 
-    .doc-name {
-        font-weight: 500;
-        color: #333;
-        // Gerekirse metin taşması için stiller eklenebilir
-        word-break: break-word;
-    }
+  .doc-name {
+    font-weight: 500;
+    color: #333;
+    word-break: break-word;
+  }
 }
 
 .recent-docs .doc.new-doc-placeholder {
-    border-style: dashed;
-    border-color: #FF6B6B; // Gruvbox red
-    background-color: #fff5f5; // Hafif kırmızımsı arka plan
+  border-style: dashed;
+  border-color: #FF6B6B;
+  background-color: #fff5f5;
 
-    .new-doc-icon {
-        font-size: 56px;
-        width: 56px;
-        height: 56px;
-        color: #FF6B6B; // Gruvbox red
-        margin-bottom: 12px;
-    }
+  .new-doc-icon {
+    font-size: 56px;
+    width: 56px;
+    height: 56px;
+    color: #FF6B6B;
+    margin-bottom: 12px;
+  }
 
+  .new-doc-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #FF6B6B;
+  }
+
+  &:hover {
+    border-color: #cc241d;
+    background-color: #ffeaea;
+    color: #cc241d;
+
+    .new-doc-icon,
     .new-doc-text {
-        font-size: 1rem;
-        font-weight: 500;
-        color: #FF6B6B; // Gruvbox red
-    }
-
-    &:hover {
-      border-color: #cc241d; // Koyu kırmızı
-      background-color: #ffeaea;
       color: #cc241d;
-      .new-doc-icon, .new-doc-text {
-        color: #cc241d;
-      }
     }
+  }
 }
 
 .no-recent-docs {
-    width: 100%;
-    text-align: center;
-    color: #777;
-    padding: 20px;
+  width: 100%;
+  text-align: center;
+  color: #777;
+  padding: 20px;
 }
 
 
 .table-container {
-  margin: 30px auto; // Üst/alt ve otomatik yatay margin
+  margin: 30px auto;
   width: 100%;
-  max-width: 1200px; // Ana konteyner ile aynı hizada
+  max-width: 1200px;
   box-sizing: border-box;
-  overflow-x: auto; // Küçük ekranlarda tablo taşarsa scroll
+  overflow-x: auto;
 }
 
 table {
   width: 100%;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  overflow: hidden; // Köşelerin yuvarlak kalması için
+  overflow: hidden;
 }
 
-th.mat-header-cell, td.mat-cell {
-  padding: 12px 16px; // Hücre içi boşluklar
+th.mat-header-cell,
+td.mat-cell {
+  padding: 12px 16px;
 }
 
 th.mat-header-cell {
@@ -197,28 +311,28 @@ th.mat-header-cell {
 }
 
 tr.mat-row:hover {
-  background-color: #f9f9f9; // Satır üzerine gelince hafif arka plan
+  background-color: #f9f9f9;
 }
 
 td.mat-cell[style*="cursor: pointer"]:hover {
-    text-decoration: underline;
-    color: #FF6B6B; // Gruvbox red
+  text-decoration: underline;
+  color: #FF6B6B;
 }
 
 
 mat-paginator {
   margin-top: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-// Actions Column Buttons
 td.mat-cell button[mat-icon-button] {
-    margin-right: 8px;
-    color: #555;
-    &:hover {
-        color: #FF6B6B; // Gruvbox red
-    }
+  margin-right: 8px;
+  color: #555;
+
+  &:hover {
+    color: #FF6B6B;
+  }
 }
 
 .loading-indicator {
@@ -230,48 +344,50 @@ td.mat-cell button[mat-icon-button] {
 
 .docs.placeholders {
   .placeholder-doc {
-    background-color: #e0e0e0; // Placeholder arka plan rengi
+    background-color: #e0e0e0;
     border: 1px dashed #bdbdbd;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     color: #9e9e9e;
-    min-height: 150px; // Kartlarla benzer yükseklik
+    min-height: 150px;
     cursor: default;
 
     .placeholder-icon {
-        font-size: 48px;
-        width: 48px;
-        height: 48px;
-        margin-bottom: 10px;
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 10px;
     }
+
     .placeholder-text {
-        font-size: 0.9rem;
+      font-size: 0.9rem;
     }
   }
 }
 
 .disabled-doc {
-    cursor: not-allowed !important;
-    opacity: 0.7;
-    &:hover {
-        transform: none !important;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08) !important; // Hover efektini kaldır
-    }
+  cursor: not-allowed !important;
+  opacity: 0.7;
+
+  &:hover {
+    transform: none !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08) !important;
+  }
 }
 
 
 .no-data-cell {
-    text-align: center;
-    padding: 20px;
-    font-style: italic;
-    color: #757575;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  color: #757575;
 }
 
 
 .invitations-container {
-  background-color: #fff8e1; // Hafif sarımsı bir arka plan
+  background-color: #fff8e1;
   color: #282828;
   margin: 20px auto;
   padding: 20px;
@@ -280,14 +396,14 @@ td.mat-cell button[mat-icon-button] {
   width: 100%;
   max-width: 1200px;
   box-sizing: border-box;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .invitations-header {
   margin-bottom: 20px;
   font-size: 1.25rem;
   font-weight: 500;
-  color: #4e342e; // Koyu kahve tonu
+  color: #4e342e;
 }
 
 .invitations-list {
@@ -299,52 +415,108 @@ td.mat-cell button[mat-icon-button] {
 .invitation-card {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
   background-color: #fff;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #eee;
-  transition: box-shadow 0.2s ease-in-out;
+  padding: 16px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease-in-out;
+  overflow: hidden;
 
   &:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background-color: $light-background;
   }
 
-  .invitation-icon mat-icon {
-    font-size: 28px;
-    color: #8d6e63; // Kahve tonu
+  .invitation-icon {
+    flex-shrink: 0;
+    background-color: $light-background;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      color: $medium-text;
+    }
   }
 
   .invitation-details {
     flex-grow: 1;
+    min-width: 0;
+
+    .invitation-title,
+    .invitation-meta span[title="Davet Eden"] {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     .invitation-title {
-      font-weight: 500;
+      font-weight: 600;
       font-size: 1rem;
-      color: #333;
+      color: $dark-text;
+      margin-bottom: 4px;
     }
 
     .invitation-meta {
-      font-size: 0.85rem;
-      color: #757575;
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-top: 4px;
+      font-size: 0.85rem;
+      color: $light-text;
     }
-    
+
     .access-badge {
-      background-color: #e0e0e0;
-      color: #333;
-      padding: 2px 8px;
+      padding: 3px 10px;
       border-radius: 12px;
       font-size: 0.75rem;
       font-weight: 500;
+
+      &.viewer {
+        background-color: #e0e0e0;
+        color: #333;
+      }
+
+      &.editor {
+        background-color: #d5d5d5;
+        color: #222;
+      }
     }
   }
 
   .invitation-actions {
     display: flex;
-    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 4px;
+
+    button[mat-icon-button] {
+      transition: all 0.2s ease-in-out;
+      border-radius: 50%;
+
+      mat-icon {
+        transition: color 0.2s;
+      }
+
+      &:hover:not(:disabled) {
+        &[color="primary"] {
+          background-color: rgba($brand-green, 0.1);
+
+          mat-icon {
+            color: $brand-green-dark;
+          }
+        }
+
+        &[color="warn"] {
+          background-color: rgba($brand-red, 0.1);
+
+          mat-icon {
+            color: $brand-red-dark;
+          }
+        }
+      }
+    }
   }
 }

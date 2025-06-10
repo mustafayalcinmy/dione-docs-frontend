@@ -1,5 +1,3 @@
-// Path: dione-docs-frontend/src/app/core/components/main-page/main-page.component.ts
-
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
@@ -13,9 +11,13 @@ import { CommonModule } from '@angular/common';
 import { MatRippleModule } from '@angular/material/core';
 import { DocumentService } from '../../services/document.service';
 import { DocumentPayload, CombinedDocumentList } from '../../dto/document.dto';
-import { forkJoin } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { forkJoin, Observable } from 'rxjs';
 import { InvitationDetailResponse } from '../../dto/permission.dto';
-
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ShareDialogComponent, ShareDialogData } from '../share-dialog/share-dialog.component';
+import { AuthService } from '../../services/auth.service';
+import { User } from '../../dto/user.dto';
 @Component({
   selector: 'app-main-page',
   standalone: true,
@@ -30,6 +32,8 @@ import { InvitationDetailResponse } from '../../dto/permission.dto';
     MatFormFieldModule,
     MatInputModule,
     MatRippleModule,
+    MatTooltipModule,
+    MatDialogModule,
   ],
   templateUrl: './main-page.component.html',
   styleUrls: ['./main-page.component.scss'],
@@ -40,7 +44,9 @@ export class MainPageComponent implements OnInit {
   recentDocuments: DocumentPayload[] = [];
   allUserDocuments: DocumentPayload[] = [];
   pendingInvitations: InvitationDetailResponse[] = [];
-  
+  public isNotificationsSidebarOpen = false;
+  currentUserId: string | undefined = undefined;
+  id: string | undefined = undefined;
   isLoading = true;
   isProcessingInvitation = false;
 
@@ -50,19 +56,28 @@ export class MainPageComponent implements OnInit {
   constructor(
     private router: Router,
     private documentService: DocumentService,
+    public dialog: MatDialog,
+    private authService: AuthService,
   ) {
     this.dataSource = new MatTableDataSource<DocumentPayload>([]);
   }
 
   ngOnInit(): void {
-    this.loadAllData();
+    this.authService.fetchAndSetCurrentUser().subscribe({
+      next: (user) => {
+        this.currentUserId = user.id;
+        console.log('Kullanıcı bilgisi başarıyla alındı ve atandı:', user);
+        this.loadAllData();
+      },
+      error: (err) => {
+        console.error('Kullanıcı bilgisi alınırken hata oluştu:', err);
+        this.isLoading = false;
+      }
+    });
   }
 
-  /**
-   * Hem kullanıcı dokümanlarını hem de bekleyen davetiyeleri paralel olarak yükler.
-   * Yükleme tamamlandığında veya hata oluştuğunda arayüzü günceller.
-   */
   loadAllData(): void {
+    console.log('Kullanıcı ID:', this.currentUserId);
     this.isLoading = true;
 
     forkJoin({
@@ -70,27 +85,37 @@ export class MainPageComponent implements OnInit {
       invitations: this.documentService.getPendingInvitations()
     }).subscribe({
       next: (results) => {
-        // Doküman verilerini işle
+        this.pendingInvitations = (results.invitations as InvitationDetailResponse[]) || [];
+
+        const pendingDocumentIds = new Set(
+          this.pendingInvitations.map(inv => inv.document_id).filter(Boolean)
+        );
+
         const docData = results.documents;
-        this.allUserDocuments = [...docData.owned, ...docData.shared].map(doc => ({
+
+        const acceptedSharedDocuments = (docData?.shared || [])
+          .filter(doc => doc.id && !pendingDocumentIds.has(doc.id));
+
+        this.allUserDocuments = [...(docData?.owned || []), ...acceptedSharedDocuments].map(doc => ({
           ...doc,
           favorite: (doc as any).favorite || false
         }));
-        this.recentDocuments = docData.recent;
-        
-        // Tablo verisini ayarla
+
+        this.recentDocuments = (docData?.recent || [])
+          .filter(doc => doc.id && !pendingDocumentIds.has(doc.id));
+
         this.dataSource.data = this.allUserDocuments;
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
-        
-        // Davetiye verilerini işle
-        this.pendingInvitations = results.invitations as InvitationDetailResponse[];
-        
+
         this.isLoading = false;
       },
       error: (err) => {
         console.error('Veri yüklenirken bir hata oluştu:', err);
-        this.isLoading = false; // Hata durumunda yükleniyor ekranını kapat
+        this.allUserDocuments = [];
+        this.recentDocuments = [];
+        this.pendingInvitations = [];
+        this.isLoading = false;
       }
     });
   }
@@ -130,20 +155,36 @@ export class MainPageComponent implements OnInit {
 
   toggleFavorite(doc: DocumentPayload) {
     (doc as any).favorite = !(doc as any).favorite;
-    this.dataSource.data = [...this.allUserDocuments]; // Değişikliği yansıtmak için referansı güncelle
+    this.dataSource.data = [...this.allUserDocuments];
   }
-  
+
+  get notificationCountDisplay(): string {
+    const count = this.pendingInvitations.length;
+    if (count === 0) {
+      return '';
+    }
+    return count > 9 ? '9+' : count.toString();
+  }
+
+  toggleNotificationsSidebar(): void {
+    this.isNotificationsSidebarOpen = !this.isNotificationsSidebarOpen;
+  }
+
   onAccept(invitationId: string): void {
     this.isProcessingInvitation = true;
     this.documentService.acceptInvitation(invitationId).subscribe({
       next: (res) => {
         alert(res.message || 'Davetiye başarıyla kabul edildi!');
-        this.loadAllData(); // Tüm veriyi yenile
+        this.loadAllData();
+        if (this.pendingInvitations.length - 1 === 0) {
+          this.isNotificationsSidebarOpen = false;
+        }
       },
       error: (err) => {
         alert(`Bir hata oluştu: ${err.error?.error || 'Davetiye kabul edilemedi.'}`);
-      }
-    }).add(() => this.isProcessingInvitation = false); // Her durumda (başarı/hata) butonu aktif et
+      },
+      complete: () => this.isProcessingInvitation = false
+    });
   }
 
   onReject(invitationId: string): void {
@@ -151,11 +192,34 @@ export class MainPageComponent implements OnInit {
     this.documentService.rejectInvitation(invitationId).subscribe({
       next: (res) => {
         alert(res.message || 'Davetiye reddedildi.');
-        this.loadAllData(); // Tüm veriyi yenile
+        this.loadAllData();
+        if (this.pendingInvitations.length - 1 === 0) {
+          this.isNotificationsSidebarOpen = false;
+        }
       },
       error: (err) => {
         alert(`Bir hata oluştu: ${err.error?.error || 'Davetiye reddedilemedi.'}`);
-      }
-    }).add(() => this.isProcessingInvitation = false); // Her durumda (başarı/hata) butonu aktif et
+      },
+      complete: () => this.isProcessingInvitation = false
+    });
+  }
+
+  openShareDialog(doc: DocumentPayload): void {
+    if (!doc.id) {
+      alert('Paylaşım için doküman kimliği bulunamadı.');
+      return;
+    }
+
+    const dialogData: ShareDialogData = {
+      documentId: doc.id,
+      documentTitle: doc.title || 'Başlıksız Belge'
+    };
+
+    this.dialog.open(ShareDialogComponent, {
+      width: '600px',
+      maxWidth: '90vw',
+      data: dialogData,
+      autoFocus: false
+    });
   }
 }

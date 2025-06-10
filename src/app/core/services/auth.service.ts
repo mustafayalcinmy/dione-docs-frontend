@@ -1,6 +1,6 @@
 import { Injectable, PLATFORM_ID, Inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { AuthResponse, LoginRequest, RegisterRequest, User } from '../dto/user.dto';
 import { isPlatformBrowser } from '@angular/common';
@@ -10,10 +10,10 @@ import { Router } from '@angular/router';
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://127.0.0.1:8080/api/v1'; // Replace with your actual API URL
+  private readonly API_URL = 'http://127.0.0.1:8080/api/v1';
   private tokenExpirationTimer: any;
   private isBrowser: boolean;
-  
+
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
@@ -31,17 +31,17 @@ export class AuthService {
 
   private checkForStoredAuth(): void {
     if (!this.isBrowser) {
-      return; // Skip localStorage operations when not in browser
+      return;
     }
-    
+
     const userData = localStorage.getItem('userData');
     const token = localStorage.getItem('token');
-    
+
     if (userData && token) {
       const user: User = JSON.parse(userData);
       this.currentUserSubject.next(user);
       this.isAuthenticatedSubject.next(true);
-      
+
       const expirationTime = localStorage.getItem('tokenExpiration');
       if (expirationTime) {
         const expiresIn = new Date(expirationTime).getTime() - new Date().getTime();
@@ -69,6 +69,43 @@ export class AuthService {
       );
   }
 
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = this.getToken();
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+  }
+
+
+  fetchAndSetCurrentUser(): Observable<User> {
+    const currentUser = this.currentUserSubject.value;
+    if (currentUser) {
+      return of(currentUser);
+    }
+
+    if (this.isBrowser) {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        try {
+          const userFromStorage: User = JSON.parse(userData);
+          if (userFromStorage && userFromStorage.id) {
+            this.currentUserSubject.next(userFromStorage);
+            this.isAuthenticatedSubject.next(true);
+            return of(userFromStorage);
+          }
+        } catch (e) {
+          console.error('localStorage\'daki kullanıcı verisi bozuk.', e);
+          this.logout();
+          return throwError(() => new Error('Bozuk oturum verisi.'));
+        }
+      }
+    }
+
+    return throwError(() => new Error('Aktif oturum bulunamadı.'));
+  }
+
   checkAuthAndRedirect(): void {
     if (this.isAuthenticated()) {
       this.router.navigate(['/main-page']);
@@ -89,7 +126,7 @@ export class AuthService {
   }
 
   private handleAuthentication(authResponse: AuthResponse): void {
-    const expiresIn = authResponse.expiresIn || 86400; 
+    const expiresIn = authResponse.expiresIn || 86400;
     const user: User = {
       id: authResponse.userId,
       email: authResponse.email,
@@ -97,26 +134,22 @@ export class AuthService {
     };
     console.log('User:', user);
 
-    // Update state
+
     this.currentUserSubject.next(user);
     this.isAuthenticatedSubject.next(true);
     console.log('User:2', user);
-    
-    // Store auth data in localStorage only in browser environment
+
     if (this.isBrowser) {
       localStorage.setItem('token', authResponse.token);
       localStorage.setItem('userData', JSON.stringify(user));
-      
-      // Set token expiration
+
       const expirationDate = new Date(new Date().getTime() + expiresIn * 1000);
       localStorage.setItem('tokenExpiration', expirationDate.toISOString());
-      
-      // Set auto logout
+
       this.autoLogout(expiresIn * 1000);
     }
   }
 
-  // Get JWT token
   getToken(): string | null {
     if (!this.isBrowser) {
       return null;
@@ -124,40 +157,38 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
-  // Auto logout when token expires
   private autoLogout(expirationDuration: number): void {
     this.tokenExpirationTimer = setTimeout(() => {
       this.logout();
     }, expirationDuration);
   }
 
-  // Logout user
   logout(): void {
-    // Clear state
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
-    
-    // Clear localStorage only in browser environment
+
     if (this.isBrowser) {
       localStorage.removeItem('token');
       localStorage.removeItem('userData');
       localStorage.removeItem('tokenExpiration');
     }
-    
-    // Clear timeout
+
     if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
       this.tokenExpirationTimer = null;
     }
   }
 
-  // Check if current user is authenticated
   isAuthenticated(): boolean {
     return this.isAuthenticatedSubject.value;
   }
 
-  // Get current user data
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
+  }
+
+  getCurrentUserId(): string | null {
+    const currentUser = this.currentUserSubject.value;
+    return currentUser ? currentUser.id : null;
   }
 }

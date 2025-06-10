@@ -6,14 +6,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { DocumentService } from '../../services/document.service';
 import { PermissionResponseFromAPI } from '../../dto/permission.dto';
 
-// Dialog'a gönderilecek veri tipi (Bu zaten projenizde mevcut)
 export interface ShareDialogData {
   documentId: string;
   documentTitle: string;
 }
 
 @Component({
-  selector: 'app-share-dialog', // Selector aynı kalıyor
+  selector: 'app-share-dialog',
   standalone: true,
   imports: [
     CommonModule,
@@ -45,7 +44,6 @@ export class ShareDialogComponent implements OnInit {
     this.isLoading = true;
     this.documentService.getDocumentShares(this.data.documentId).subscribe({
       next: (shares) => {
-        // En yeni paylaşılan veya davet edilen en üste gelecek şekilde sırala
         this.sharedWith = shares.sort((a, b) => 
           new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
         );
@@ -69,7 +67,7 @@ export class ShareDialogComponent implements OnInit {
         next: () => {
           alert('Davetiye başarıyla gönderildi!');
           this.inviteEmail = '';
-          this.loadShares(); // Listeyi yenile
+          this.loadShares();
           this.isProcessing = false;
         },
         error: (err) => {
@@ -90,7 +88,7 @@ export class ShareDialogComponent implements OnInit {
       .subscribe({
         next: () => {
           alert('Erişim/davetiye başarıyla kaldırıldı.');
-          this.loadShares(); // Listeyi yenile
+          this.loadShares();
           this.isProcessing = false;
         },
         error: (err) => {

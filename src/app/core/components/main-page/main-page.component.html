@@ -1,6 +1,14 @@
 <div class="header">
     <div class="header-container">
-        <div></div>
+        <div class="notifications-area">
+            <button mat-icon-button (click)="toggleNotificationsSidebar()" aria-label="Bekleyen davetiyeleri göster">
+                <mat-icon>notifications</mat-icon>
+                <span *ngIf="pendingInvitations.length > 0" class="notification-badge">
+                    {{ notificationCountDisplay }}
+                </span>
+            </button>
+        </div>
+
         <div class="search-doc">
             <input type="search" placeholder="Dökümanlarda Ara..." (keyup)="applyFilter($event)" #searchInput>
             <button type="button" mat-icon-button aria-label="Search documents">
@@ -47,30 +55,52 @@
         </ng-template>
     </div>
 </div>
+<div *ngIf="isNotificationsSidebarOpen" class="notifications-overlay" (click)="toggleNotificationsSidebar()"></div>
 
-<div *ngIf="!isLoading && pendingInvitations && pendingInvitations.length > 0" class="invitations-container">
-    <div class="invitations-header">
-        <span>Bekleyen Davetiyeler ({{ pendingInvitations.length }})</span>
+<div class="notifications-sidebar" [class.open]="isNotificationsSidebarOpen" (click)="$event.stopPropagation()">
+    <div class="sidebar-header">
+        <h3>Bildirimler</h3>
+        <button mat-icon-button (click)="toggleNotificationsSidebar()" aria-label="Bildirimleri kapat">
+            <mat-icon>close</mat-icon>
+        </button>
     </div>
-    <div class="invitations-list">
-        <div class="invitation-card" *ngFor="let inv of pendingInvitations">
-            <div class="invitation-icon">
-                <mat-icon>mail_outline</mat-icon>
-            </div>
-            <div class="invitation-details">
-                <div class="invitation-title" [title]="inv.document_title">{{ inv.document_title }}</div>
-                <div class="invitation-meta">
-                    <span title="Davet Eden">{{ inv.shared_by_email }}</span>
-                    <span class="access-badge">{{ inv.access_type | titlecase }}</span>
+
+    <div class="sidebar-content">
+        <ng-container *ngIf="!isLoading && pendingInvitations.length > 0; else noInvitations">
+            <div class="invitations-list">
+                <div class="invitation-card" *ngFor="let inv of pendingInvitations">
+                    <div class="invitation-icon">
+                        <mat-icon>mail_outline</mat-icon>
+                    </div>
+                    <div class="invitation-details">
+                        <div class="invitation-title" [title]="inv.document_title">{{ inv.document_title }}</div>
+                        <div class="invitation-meta">
+                            <span title="Davet Eden">{{ inv.shared_by_email }}</span>
+                            <span class="access-badge" [ngClass]="inv.access_type.toLowerCase()">{{ inv.access_type |
+                                titlecase }}</span>
+                        </div>
+                    </div>
+                    <div class="invitation-actions">
+                        <button mat-icon-button color="primary" matTooltip="Accept"
+                            (click)="onAccept(inv.invitation_id)" [disabled]="isProcessingInvitation"
+                            aria-label="Accept invitation">
+                            <mat-icon>check_circle_outline</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" matTooltip="Reject" (click)="onReject(inv.invitation_id)"
+                            [disabled]="isProcessingInvitation" aria-label="Reject invitation">
+                            <mat-icon>highlight_off</mat-icon>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="invitation-actions">
-                <button mat-flat-button color="primary" (click)="onAccept(inv.invitation_id)"
-                    [disabled]="isProcessingInvitation">Kabul Et</button>
-                <button mat-stroked-button color="warn" (click)="onReject(inv.invitation_id)"
-                    [disabled]="isProcessingInvitation">Reddet</button>
+        </ng-container>
+
+        <ng-template #noInvitations>
+            <div class="no-invitations">
+                <mat-icon>notifications_off</mat-icon>
+                <p>Okunmamış Bildiriminiz bulunmuyor.</p>
             </div>
-        </div>
+        </ng-template>
     </div>
 </div>
 
@@ -111,13 +141,21 @@
             <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef> İşlemler </th>
                 <td mat-cell *matCellDef="let element">
+
+
                     <button mat-icon-button (click)="editDocument(element); $event.stopPropagation();"
                         matTooltip="Düzenle" aria-label="Düzenle">
                         <mat-icon>edit</mat-icon>
                     </button>
-                    <button mat-icon-button (click)="deleteDocument(element.id); $event.stopPropagation();"
+
+                    <button mat-icon-button color="warn" (click)="deleteDocument(element.id); $event.stopPropagation();"
                         matTooltip="Sil" aria-label="Sil">
                         <mat-icon>delete</mat-icon>
+                    </button>
+                    <button mat-icon-button color="primary" *ngIf="element.owner_id === currentUserId"
+                        (click)="openShareDialog(element); $event.stopPropagation();" matTooltip="Paylaş"
+                        aria-label="Paylaş">
+                        <mat-icon>share</mat-icon>
                     </button>
                 </td>
             </ng-container>
