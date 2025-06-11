@@ -1,3 +1,5 @@
+<input type="file" #fileInput hidden (change)="handleFileImport($event)" accept=".d1" />
+
 <div *ngIf="isGeneratingPdf" class="pdf-generation-overlay">
   <div class="spinner-container">
     <mat-spinner [diameter]="60"></mat-spinner>
@@ -50,6 +52,8 @@
                  (saveClick)="handleSave()"
                  (downloadClick)="handleDownload()"
                  (downloadAsPdfClick)="handleDownloadAsPdf()"
+                 (exportClick)="handleExport()"
+                 (importClick)="triggerImport()"
                  (printClick)="handlePrint()"
                  (addNewPage)="handleAddNewPage()"
                  (undoClick)="handleUndo()"

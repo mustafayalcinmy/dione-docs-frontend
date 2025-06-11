@@ -1,18 +1,18 @@
-<!-- Ana sarmalayıcıya [class.disabled] ekleyerek tüm toolbar'ın görünümünü ve tıklanabilirliğini kontrol et -->
 <div class="main-toolbar" [class.disabled]="disabled">
   <div class="menu-bar">
-    <!-- Menülerin tıklanmasını engellemek için (click) olayına '!disabled' koşulu ekle -->
     <div class="menu-item" (click)="!disabled && toggleMenu('file')" [class.active]="menuOpen === 'file'">
       File
       <div class="dropdown-menu" *ngIf="menuOpen === 'file'">
-        <!-- İndirme ve Yazdırma gibi salt okunur işlemler aktif kalabilir, diğerlerini engelleyelim -->
         <div class="menu-option" (click)="onNewClick()">New</div>
         <div class="menu-option" (click)="handleMenuOption('open')">Open...</div>
+        <div class="menu-option" (click)="handleMenuOption('import-d1')">Import from .d1...</div>
+        <div class="menu-option-divider"></div>
         <div class="menu-option" (click)="onSaveClick()">Save</div>
         <div class="menu-option" (click)="handleMenuOption('share')">Share...</div>
         <div class="menu-option-divider"></div>
-        <div class="menu-option" (click)="onDownloadClick()">Download</div>
+        <div class="menu-option" (click)="onDownloadClick()">Download as TXT</div>
         <div class="menu-option" (click)="handleMenuOption('download-pdf')">Download as PDF</div>
+        <div class="menu-option" (click)="handleMenuOption('export-d1')">Export as .d1</div>
       </div>
     </div>
     <div class="menu-item" (click)="!disabled && toggleMenu('edit')" [class.active]="menuOpen === 'edit'">
@@ -20,8 +20,7 @@
       <div class="dropdown-menu" *ngIf="menuOpen === 'edit'">
         <div class="menu-option" (click)="onUndoClick()">Undo</div>
         <div class="menu-option" (click)="onRedoClick()">Redo</div>
-        <!-- Diğer edit seçenekleri de burada engellenebilir... -->
-      </div>
+        </div>
     </div>
     <div class="menu-item" (click)="!disabled && toggleMenu('format')" [class.active]="menuOpen === 'format'">
       Format
@@ -44,7 +43,6 @@
   </div>
 
   <div class="format-controls">
-    <!-- Tüm seçim kutularına [disabled] özelliğini ekle -->
     <div class="font-size-select-wrapper" title="Font Style">
       <select class="font-size-select" (change)="onFontChange($event)" [disabled]="disabled">
         <option value="" disabled selected>Font Style</option>
@@ -62,7 +60,6 @@
   </div>
 
   <div class="action-divider"></div>
-  <!-- Tüm butonlara [disabled] özelliğini ekle -->
   <button class="action-button btn-icon" title="Bold (Ctrl+B)" (click)="onBoldClick()" [disabled]="disabled">
     <i class="material-icons">format_bold</i>
   </button>
@@ -93,7 +90,6 @@
       <i class="material-icons">grid_on</i>
     </button>
     <div class="table-grid-popover" *ngIf="isTableGridOpen">
-      <!-- Grid içeriği zaten tıklama olayları engellendiği için çalışmayacaktır -->
       <div class="grid-dimension-display">{{ hoveredRows }} x {{ hoveredCols }}</div>
       <div class="table-grid" (mouseleave)="resetHovered()" [ngStyle]="{'grid-template-columns': 'repeat(' + cols.length + ', 20px)'}">
         <ng-container *ngFor="let row of rows; let r_index = index">
@@ -110,7 +106,6 @@
 </div>
 
 <div class="quick-actions">
-  <!-- Sadece 'Download' ve 'Print' gibi salt okunur eylemlerin butonları aktif kalabilir, diğerleri disabled olmalı. -->
   <button class="action-button btn-text" title="New Document" (click)="onNewClick()" [disabled]="disabled">New</button>
   <button class="action-button btn-text" title="Save Document" (click)="onSaveClick()" [disabled]="disabled">Save</button>
   <button class="action-button btn-text" title="Download Document" (click)="onDownloadClick()">Download</button>

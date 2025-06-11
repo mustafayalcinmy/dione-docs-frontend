@@ -29,7 +29,6 @@ const FONT_STYLES_CONFIG = [
   styleUrls: ['./toolbar.component.scss']
 })
 export class ToolbarComponent implements OnChanges {
-  // YENİ: Dışarıdan 'disabled' durumunu almak için Input ekle
   @Input() disabled: boolean = false;
 
   public fontSizes: string[] = FONT_SIZES;
@@ -70,6 +69,8 @@ export class ToolbarComponent implements OnChanges {
   @Output() tableInsertWithSize = new EventEmitter<{ rows: number, cols: number }>();
   @Output() fontSelected = new EventEmitter<string>();
   @Output() downloadAsPdfClick = new EventEmitter<void>();
+  @Output() exportClick = new EventEmitter<void>();
+  @Output() importClick = new EventEmitter<void>();
 
   constructor(private elementRef: ElementRef, public dialog: MatDialog) { }
 
@@ -113,7 +114,6 @@ export class ToolbarComponent implements OnChanges {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
-    // Bu metodda bir değişiklik gerekmiyor
     const target = event.target as Node;
     const containerElement = this.elementRef.nativeElement.querySelector('.font-size-select-wrapper');
     const colorContainer = this.elementRef.nativeElement.querySelector('.color-picker-container');
@@ -129,7 +129,6 @@ export class ToolbarComponent implements OnChanges {
   }
 
   toggleMenu(menu: string): void {
-    // DÜZENLEME: Eğer disabled ise menüyü açma
     if (this.disabled) return;
     const currentlyOpen = this.menuOpen;
     this.closeAllMenus();
@@ -144,15 +143,14 @@ export class ToolbarComponent implements OnChanges {
     this.menuOpen = null;
   }
 
-  // Bütün EventEmitter'lar zaten ana component'te engellendiği için
-  // buradaki fonksiyonlarda bir değişiklik yapmaya gerek yok.
-  // HTML tarafında butonları disable etmek yeterli.
   onNewClick(): void { this.newClick.emit(); this.closeAllMenus(); }
   onSaveClick(): void { this.saveClick.emit(); this.closeAllMenus(); }
   onDownloadClick(): void { this.downloadClick.emit(); this.closeAllMenus(); }
   onPrintClick(): void { this.printClick.emit(); this.closeAllMenus(); }
   onUndoClick(): void { this.undoClick.emit(); this.closeAllMenus(); }
   onRedoClick(): void { this.redoClick.emit(); this.closeAllMenus(); }
+  onExportClick(): void { this.exportClick.emit(); this.closeAllMenus(); }
+  onImportClick(): void { this.importClick.emit(); this.closeAllMenus(); }
 
   handleMenuOption(option: string): void {
     switch (option) {
@@ -162,7 +160,9 @@ export class ToolbarComponent implements OnChanges {
       case 'format-underline': this.onUnderlineClick(); break;
       case 'insert-link': this.onLinkClick(); break;
       case 'insert-table': this.insertTable.emit(); break;
-      case 'download-pdf': this.downloadAsPdfClick.emit(); break; 
+      case 'download-pdf': this.downloadAsPdfClick.emit(); break;
+      case 'export-d1': this.onExportClick(); break;
+      case 'import-d1': this.onImportClick(); break;
       case 'share':
         console.log('ToolbarComponent: Share menu option clicked, emitting shareDocumentClick event.');
         this.shareDocumentClick.emit();
@@ -174,7 +174,6 @@ export class ToolbarComponent implements OnChanges {
   }
 
   handleFontSizeDisplayClick(event: MouseEvent): void {
-    // Bu metodda değişiklik gerekmiyor, HTML'de kontrol edilecek.
     event.stopPropagation();
     if (this.customSizeInputActive) {
       this.isSizeDropdownOpen = !this.isSizeDropdownOpen;
@@ -202,7 +201,6 @@ export class ToolbarComponent implements OnChanges {
   }
 
   toggleSizeDropdownOnly(event: MouseEvent): void {
-    // Bu metodda değişiklik gerekmiyor, HTML'de kontrol edilecek.
     event.stopPropagation();
     this.isSizeDropdownOpen = !this.isSizeDropdownOpen;
     if (this.isSizeDropdownOpen && !this.customSizeInputActive) {

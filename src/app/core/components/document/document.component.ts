@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, Inject, PLATFORM_ID, ViewEncapsulation, ChangeDetectorRef, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, AfterViewInit, Inject, PLATFORM_ID, ViewEncapsulation, ChangeDetectorRef, OnDestroy, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -32,6 +32,15 @@ interface DocumentPage {
 }
 interface BetterTableModule {
   insertTable(rows: number, columns: number): void;
+}
+
+// Interface for the custom .d1 export format
+interface DocumentExport {
+  fileType: 'd1-document';
+  formatVersion: '1.0';
+  title: string;
+  description: string;
+  content: QuillDelta;
 }
 
 const QUILL_FONT_SIZES_WHITELIST = ['8px', '9px', '10px', '12px', '14px', '16px', '20px', '24px', '32px', '42px', '54px', '68px', '84px', '98px'];
@@ -101,6 +110,8 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public currentUserAccessType: 'owner' | 'viewer' | 'editor' | 'admin' | null = null;
   public isViewer: boolean = false;
+
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
 
   constructor(
@@ -1359,5 +1370,162 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       this.isGeneratingPdf = false;
       this.changeDetector.detectChanges();
     }
+  }
+
+  /**
+   * Triggers the hidden file input element to open the file dialog.
+   * Confirms with the user before proceeding as it's a destructive action.
+   */
+  triggerImport(): void {
+    if (this.isViewer) return; // Viewers can't import
+    const confirmation = confirm('Importing a new document will replace all current content. This action cannot be undone. Are you sure you want to continue?');
+    if (confirmation) {
+      this.fileInput.nativeElement.click();
+    }
+  }
+
+  /**
+   * Handles the file selection from the import dialog.
+   * Reads, parses, and validates the .d1 file, then loads it into the editor.
+   */
+  async handleFileImport(event: Event): Promise<void> {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      return;
+    }
+
+    const file = target.files[0];
+    if (!file.name.toLowerCase().endsWith('.d1')) {
+      alert('Invalid file type. Please select a .d1 file.');
+      target.value = ''; // Reset file input
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result as string;
+        const data: DocumentExport = JSON.parse(text);
+
+        // Validate the imported file
+        if (data.fileType !== 'd1-document' || !data.content || !data.title) {
+          throw new Error('Invalid or corrupted .d1 file format.');
+        }
+        
+        // Load the validated data into the document
+        await this.loadDocumentFromImport(data);
+
+      } catch (error) {
+        console.error("Error processing imported file:", error);
+        alert(`Failed to import document: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        // Reset the file input so the user can import the same file again if needed
+        target.value = '';
+      }
+    };
+    reader.onerror = (e) => {
+      console.error("FileReader error:", e);
+      alert('An error occurred while reading the file.');
+      target.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  /**
+   * Resets the current document state and populates it with data from an imported file.
+   * @param data The validated data from a .d1 file.
+   */
+  private async loadDocumentFromImport(data: DocumentExport): Promise<void> {
+    if (!this.QuillLib || !this.DeltaConstructor) return;
+
+    // Reset document state to treat it as a new, unsaved document
+    this.currentDocumentId = null;
+    this.currentDocumentVersion = 1;
+    this.currentDocumentOwnerId = null; // Will be set on save
+    this.isDirty = true;
+    this.saveIconState = 'unsaved';
+    
+    this.title = data.title;
+    this.currentDocumentDescription = data.description || '';
+    this.updateTitleInDOM();
+    
+    // Clear existing editors and pages
+    this.editorInstances.forEach(editor => editor.disable());
+    this.editorInstances.clear();
+    this.pages = [];
+    this.activeEditorInstanceId = null;
+    this.changeDetector.detectChanges();
+
+    // Process content delta and split into pages
+    if (data.content && data.content.ops) {
+      let currentOpsForPage: Op[] = [];
+      for (const op of data.content.ops) {
+        if (op.insert === '\n' && op.attributes?.['explicitPageBreak']) {
+          this.pages.push({
+            id: this.generatePageId(),
+            initialContent: { ops: currentOpsForPage.length > 0 ? currentOpsForPage : [{ insert: '\n' }] }
+          });
+          currentOpsForPage = [];
+        } else {
+          currentOpsForPage.push(op);
+        }
+      }
+      if (currentOpsForPage.length > 0 || this.pages.length === 0) {
+        this.pages.push({
+          id: this.generatePageId(),
+          initialContent: { ops: currentOpsForPage.length > 0 ? currentOpsForPage : [{ insert: '\n' }] }
+        });
+      }
+    }
+
+    if (this.pages.length === 0) {
+      this.pages.push({ id: this.generatePageId(), initialContent: { ops: [{ insert: '\n' }] } });
+    }
+
+    this.changeDetector.detectChanges();
+    await new Promise(resolve => setTimeout(resolve, 50)); // Wait for DOM update
+    
+    this.initializeVisiblePageEditors();
+
+    if (this.pages.length > 0) {
+      this.activeEditorInstanceId = this.pages[0].id;
+      const firstEditor = this.editorInstances.get(this.pages[0].id);
+      if (firstEditor && !this.isViewer) {
+        firstEditor.focus();
+      }
+    }
+    
+    alert(`Document "${data.title}" imported successfully. Remember to save it.`);
+  }
+
+  /**
+   * Gathers document data, packages it into a .d1 file, and triggers a download.
+   */
+  handleExport(): void {
+    const finalDelta = this.getCombinedDelta();
+    if (!finalDelta) {
+      alert("Cannot export an empty document.");
+      return;
+    }
+
+    const exportData: DocumentExport = {
+      fileType: 'd1-document',
+      formatVersion: '1.0',
+      title: this.title,
+      description: this.currentDocumentDescription,
+      content: finalDelta
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    // Sanitize title for filename
+    const fileName = (this.title || 'Untitled Document').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    a.download = `${fileName}.d1`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 }
