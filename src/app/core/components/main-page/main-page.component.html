@@ -15,6 +15,12 @@
                 <mat-icon>search</mat-icon>
             </button>
         </div>
+
+        <div class="user-actions">
+            <button mat-icon-button (click)="onLogout()" matTooltip="Oturumu Kapat" aria-label="Oturumu kapat">
+                <mat-icon>logout</mat-icon>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -103,13 +109,14 @@
         </ng-template>
     </div>
 </div>
-
+<!-- Table kısmının sonundaki paginator -->
 <div class="table-container">
     <div *ngIf="isLoading" class="loading-indicator">
         <p>Tüm dokümanlar yükleniyor...</p>
     </div>
-    <div *ngIf="!isLoading">
+    <div [hidden]="isLoading">
         <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8">
+            <!-- Tüm column definitionlar aynı kalacak -->
             <ng-container matColumnDef="favorite">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> Favori </th>
                 <td mat-cell *matCellDef="let element">
@@ -122,6 +129,7 @@
                 </td>
             </ng-container>
 
+            <!-- Diğer column'lar... -->
             <ng-container matColumnDef="name">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> İsim </th>
                 <td mat-cell *matCellDef="let element" (click)="openDocument(element)" style="cursor: pointer;"
@@ -141,8 +149,6 @@
             <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef> İşlemler </th>
                 <td mat-cell *matCellDef="let element">
-
-
                     <button mat-icon-button (click)="editDocument(element); $event.stopPropagation();"
                         matTooltip="Düzenle" aria-label="Düzenle">
                         <mat-icon>edit</mat-icon>
@@ -178,7 +184,15 @@
             </tr>
         </table>
 
-        <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" showFirstLastButtons aria-label="Select page of documents">
+        <!-- Güncellenmiş Paginator -->
+        <mat-paginator 
+            #paginator
+            [pageSizeOptions]="[5, 10, 25, 100]" 
+            [pageSize]="10"
+            [showFirstLastButtons]="true"
+            [hidePageSize]="true"
+            [disabled]="isLoading"
+            aria-label="Select page of documents">
         </mat-paginator>
     </div>
 </div>

@@ -1,4 +1,4 @@
-import { Component, ViewChild, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit, AfterViewInit } from '@angular/core';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -18,6 +18,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ShareDialogComponent, ShareDialogData } from '../share-dialog/share-dialog.component';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../dto/user.dto';
+
 @Component({
   selector: 'app-main-page',
   standalone: true,
@@ -38,7 +39,7 @@ import { User } from '../../dto/user.dto';
   templateUrl: './main-page.component.html',
   styleUrls: ['./main-page.component.scss'],
 })
-export class MainPageComponent implements OnInit {
+export class MainPageComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['favorite', 'name', 'lastUpdate', 'createdAt', 'actions'];
   dataSource: MatTableDataSource<DocumentPayload>;
   recentDocuments: DocumentPayload[] = [];
@@ -76,6 +77,55 @@ export class MainPageComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit(): void {
+    // setTimeout ile bir tick bekleyerek ViewChild'ların tam yüklenmesini sağla
+    setTimeout(() => {
+      this.setupTableFeatures();
+    });
+  }
+
+  private setupTableFeatures(): void {
+    console.log('Setup table features - Paginator:', this.paginator);
+    console.log('Setup table features - Sort:', this.sort);
+    
+    if (this.paginator) {
+      this.dataSource.paginator = this.paginator;
+      this.paginator.pageSize = 10;
+      this.paginator.pageIndex = 0;
+      
+      // Paginator değişikliklerini dinle
+      this.paginator.page.subscribe(() => {
+        console.log('Paginator page changed:', this.paginator.pageSize, this.paginator.pageIndex);
+      });
+    } else {
+      console.warn('Paginator is not available');
+    }
+    
+    if (this.sort) {
+      this.dataSource.sort = this.sort;
+    } else {
+      console.warn('Sort is not available');
+    }
+  }
+
+  private setupPaginatorAfterDataLoad(): void {
+    // Veri yüklendikten sonra paginator'u yeniden kur
+    if (this.paginator && this.dataSource) {
+      // Mevcut bağlantıyı kaldır
+      this.dataSource.paginator = null;
+      
+      // Kısa bir gecikme sonrası yeniden bağla
+      setTimeout(() => {
+        if (this.paginator) {
+          this.dataSource.paginator = this.paginator;
+          this.paginator.pageSize = 10;
+          this.paginator.pageIndex = 0;
+          console.log('Paginator reconnected after data load');
+        }
+      }, 100);
+    }
+  }
+
   loadAllData(): void {
     console.log('Kullanıcı ID:', this.currentUserId);
     this.isLoading = true;
@@ -103,10 +153,12 @@ export class MainPageComponent implements OnInit {
 
         this.recentDocuments = (docData?.recent || [])
           .filter(doc => doc.id && !pendingDocumentIds.has(doc.id));
-
+        
+        // Veriyi ata
         this.dataSource.data = this.allUserDocuments;
-        this.dataSource.paginator = this.paginator;
-        this.dataSource.sort = this.sort;
+        
+        // Paginator'u yeniden bağla ve ayarla
+        this.setupPaginatorAfterDataLoad();
 
         this.isLoading = false;
       },
@@ -115,6 +167,7 @@ export class MainPageComponent implements OnInit {
         this.allUserDocuments = [];
         this.recentDocuments = [];
         this.pendingInvitations = [];
+        this.dataSource.data = [];
         this.isLoading = false;
       }
     });
@@ -155,6 +208,7 @@ export class MainPageComponent implements OnInit {
 
   toggleFavorite(doc: DocumentPayload) {
     (doc as any).favorite = !(doc as any).favorite;
+    // Veriyi güncelle ve paginator ayarlarını koru
     this.dataSource.data = [...this.allUserDocuments];
   }
 
@@ -221,5 +275,13 @@ export class MainPageComponent implements OnInit {
       data: dialogData,
       autoFocus: false
     });
+  }
+
+  onLogout(): void {
+    const confirmation = confirm('Oturumu kapatmak istediğinizden emin misiniz?');
+    
+    if (confirmation) {
+      this.authService.logout();
+    }
   }
 }

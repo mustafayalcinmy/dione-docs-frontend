@@ -50,22 +50,17 @@ export class DocumentService {
           decodedJsonString = Buffer.from(response.content, 'base64').toString('utf-8');
         }
 
-        console.log('mapResponseToPayload - Base64 decode edilmiş JSON string:', decodedJsonString);
-
         if (typeof decodedJsonString === 'string' && decodedJsonString.trim() !== "") {
           const temp = JSON.parse(decodedJsonString); // SADECE BİR KEZ PARSE ET
           const parsedData = JSON.parse(temp); // SADECE BİR KEZ PARSE ET
-          console.log('mapResponseToPayload - Decode edilmiş stringden parse edilen veri:', parsedData, typeof parsedData);
 
           if (parsedData && typeof parsedData === 'object' && Array.isArray(parsedData.ops)) {
             // Durum 1: Gelen veri zaten doğru QuillDelta formatında: { ops: [...] }
             parsedContent = parsedData as QuillDelta;
-            console.log('mapResponseToPayload: Doğrudan QuillDelta objesi olarak parse edildi:', parsedContent);
           } else if (parsedData && Array.isArray(parsedData)) {
             // Durum 2: Gelen veri bir operasyon dizisi: [{insert:'...'}, ...]
             // Bu senin "obje aslında bu şekilde geliyor db'den" tanımına uyuyor.
             parsedContent = { ops: parsedData as Op[] };
-            console.log('mapResponseToPayload: Ops dizisi olarak parse edildi ve QuillDelta objesine sarıldı:', parsedContent);
           } else {
             console.warn('mapResponseToPayload - Parse edilen veri QuillDelta formatında değil veya bir ops dizisi değil:', parsedData);
           }

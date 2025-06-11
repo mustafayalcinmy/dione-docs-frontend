@@ -97,6 +97,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   private autoSaveSubject = new Subject<void>();
   private autoSaveSubscription: Subscription | null = null;
 
+  private socketSubscription: Subscription | null = null;
 
   public currentUserAccessType: 'owner' | 'viewer' | 'editor' | 'admin' | null = null;
   public isViewer: boolean = false;
@@ -108,6 +109,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     private documentService: DocumentService,
     private authService: AuthService,
     private route: ActivatedRoute,
+    private socketService: SocketService, // SocketService'i inject et
     private router: Router,
     public dialog: MatDialog
   ) { }
@@ -195,6 +197,10 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.autoSaveSubscription) {
       this.autoSaveSubscription.unsubscribe();
     }
+    if (this.socketSubscription) {
+      this.socketSubscription.unsubscribe();
+    }
+    this.socketService.disconnect();
   }
 
   private initializeAutoSave(): void {
@@ -354,6 +360,11 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
                 if (this.saveTimeout) clearTimeout(this.saveTimeout);
 
                 if (this.currentDocumentId) {
+                  // WEBSOCKET: Kullanıcı tarafından yapılan değişiklikleri gönder
+                  this.socketService.sendOperation(
+                    delta.ops,
+                    this.currentDocumentVersion
+                  );
                   this.autoSaveSubject.next();
                 }
 
@@ -1185,6 +1196,11 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
             }
           }
         }
+        
+        // WEBSOCKET: Doküman yüklendikten sonra kanala bağlan
+        if (doc.id) {
+          this.connectToRealtimeChannel(doc.id);
+        }
       },
       error: (err) => {
         alert(`Doküman yüklenirken beklenmedik bir sorun oluştu: ${err.message || err}`);
@@ -1262,6 +1278,41 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       data: dialogData,
       autoFocus: false
     });
+  }
+  
+  // WEBSOCKET: Gelen değişiklikleri dinlemek ve bağlantıyı yönetmek için metodlar
+  private connectToRealtimeChannel(docId: string): void {
+    this.socketService.disconnect(); // Önceki bağlantıyı temizle
+    this.socketService.connect(docId);
+
+    if (this.socketSubscription) {
+      this.socketSubscription.unsubscribe();
+    }
+
+    this.socketSubscription = this.socketService.incomingOps$.subscribe(
+      (op: OTOperation) => {
+        if (op && op.ops) {
+          const editor = this.getActiveEditor();
+          if (editor) {
+            console.log('Applying remote delta:', op.ops);
+            const delta = new (this.DeltaConstructor as any)(op.ops);
+            editor.updateContents(delta, 'silent');
+          }
+        }
+      }
+    );
+  }
+
+  private getActiveEditor(): Quill | null {
+    if (this.activeEditorInstanceId) {
+      return this.editorInstances.get(this.activeEditorInstanceId) || null;
+    }
+
+    if (this.editorInstances.size > 0) {
+      return this.editorInstances.values().next().value || null;
+    }
+
+    return null;
   }
 
   async handleDownloadAsPdf(): Promise<void> {
