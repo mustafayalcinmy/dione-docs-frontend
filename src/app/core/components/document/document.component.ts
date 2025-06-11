@@ -20,6 +20,9 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ShareDialogComponent, ShareDialogData } from '../share-dialog/share-dialog.component';
 import { SocketService, OTOperation } from '../../services/socket.service';
 
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
 interface QuillRange { index: number; length: number; }
 type QuillSources = 'user' | 'api' | 'silent';
 
@@ -75,6 +78,8 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   private activeEditorInstanceId: string | null = null;
   private lastKnownSelection: { editorId: string, range: QuillRange } | null = null;
   public currentSelectionFormatState: any = {};
+
+  public isGeneratingPdf = false;
 
   private PAGE_CONTENT_TARGET_HEIGHT_PX = 864;
   private overflowCheckScheduled = false;
@@ -1183,7 +1188,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const dialogData: ShareDialogData = {
       documentId: this.currentDocumentId,
-      documentTitle: this.title || 'Başlıksız Belge' 
+      documentTitle: this.title || 'Başlıksız Belge'
     };
 
     console.log('DocumentComponent: Opening share dialog with data:', dialogData);
@@ -1211,7 +1216,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
           if (editor) {
             console.log('Applying remote delta:', op.ops);
             const delta = new (this.DeltaConstructor as any)(op.ops);
-            editor.updateContents(delta, 'silent'); 
+            editor.updateContents(delta, 'silent');
           }
         }
       }
@@ -1252,6 +1257,56 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     } else {
       this.removePage(currentPageId);
+    }
+  }
+
+  async handleDownloadAsPdf(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.isGeneratingPdf = true;
+    this.changeDetector.detectChanges();
+
+    const doc = new jsPDF('p', 'pt', 'a4');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = doc.internal.pageSize.getHeight();
+
+    // Sayfa elementlerini DOM'dan al
+    const pageElements = document.querySelectorAll<HTMLElement>('.document-page-wrapper');
+
+    try {
+      for (let i = 0; i < pageElements.length; i++) {
+        const pageElement = pageElements[i];
+        const canvas = await html2canvas(pageElement, {
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = doc.internal.pageSize.getHeight();
+
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+        const imgScaledWidth = imgWidth * ratio;
+        const imgScaledHeight = imgHeight * ratio;
+
+        if (i > 0) {
+          doc.addPage();
+        }
+        doc.addImage(imgData, 'PNG', 0, 0, imgScaledWidth, imgScaledHeight);
+      }
+
+      doc.save(`${this.title || 'document'}.pdf`);
+    } catch (error) {
+      console.error("PDF oluşturulurken bir hata oluştu:", error);
+      alert("PDF oluşturulurken bir hata oluştu. Lütfen konsolu kontrol edin.");
+    } finally {
+      this.isGeneratingPdf = false;
+      this.changeDetector.detectChanges();
     }
   }
 }

@@ -67,6 +67,7 @@ export class ToolbarComponent implements OnChanges {
   @Output() insertTable = new EventEmitter<void>();
   @Output() tableInsertWithSize = new EventEmitter<{ rows: number, cols: number }>();
   @Output() fontSelected = new EventEmitter<string>();
+  @Output() downloadAsPdfClick = new EventEmitter<void>();
 
   constructor(private elementRef: ElementRef, public dialog: MatDialog) { }
 
@@ -153,8 +154,9 @@ export class ToolbarComponent implements OnChanges {
       case 'format-underline': this.onUnderlineClick(); break;
       case 'insert-link': this.onLinkClick(); break;
       case 'insert-table': this.insertTable.emit(); break;
+      case 'download-pdf': this.downloadAsPdfClick.emit(); break; 
       case 'share':
-        console.log('ToolbarComponent: Share menu option clicked, emitting shareDocumentClick event.'); // Kontrol için log
+        console.log('ToolbarComponent: Share menu option clicked, emitting shareDocumentClick event.');
         this.shareDocumentClick.emit();
         break;
       default:

@@ -8,7 +8,7 @@
         <div class="menu-option" (click)="onSaveClick()">Save</div>
         <div class="menu-option" (click)="handleMenuOption('share')">Share...</div>
         <div class="menu-option" (click)="onDownloadClick()">Download</div>
-        <div class="menu-option" (click)="onPrintClick()">Print</div>
+        <div class="menu-option" (click)="handleMenuOption('download-pdf')">Download as PDF</div>
       </div>
     </div>
     <div class="menu-item" (click)="toggleMenu('edit')" [class.active]="menuOpen === 'edit'">

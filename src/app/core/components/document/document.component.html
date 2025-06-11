@@ -1,3 +1,10 @@
+<div *ngIf="isGeneratingPdf" class="pdf-generation-overlay">
+  <div class="spinner-container">
+    <mat-spinner [diameter]="60"></mat-spinner>
+    <p>PDF oluşturuluyor, lütfen bekleyin...</p>
+  </div>
+</div>
+
 <div class="document-editor">
   <div class="document-header">
     <button mat-icon-button aria-label="Ana Sayfa" (click)="goBackToMainPage()">
@@ -28,16 +35,14 @@
 
   <div class="toolbar-container">
     <app-toolbar [currentSelectionFormat]="currentSelectionFormatState" (newClick)="handleNew()"
-      (saveClick)="handleSave()" (downloadClick)="handleDownload()" (printClick)="handlePrint()"
-      (addNewPage)="handleAddNewPage()" (undoClick)="handleUndo()" (redoClick)="handleRedo()"
-      (sizeSelected)="applyFontSize($event)" (fontSelected)="applyFormat('font', $event)" (bold)="toggleBold()"
-      (italic)="toggleItalic()" (underline)="toggleUnderline()" (link)="insertLink()"
+      (saveClick)="handleSave()" (downloadClick)="handleDownload()" (downloadAsPdfClick)="handleDownloadAsPdf()"
+      (printClick)="handlePrint()" (addNewPage)="handleAddNewPage()" (undoClick)="handleUndo()"
+      (redoClick)="handleRedo()" (sizeSelected)="applyFontSize($event)" (fontSelected)="applyFormat('font', $event)"
+      (bold)="toggleBold()" (italic)="toggleItalic()" (underline)="toggleUnderline()" (link)="insertLink()"
       (colorSelected)="applyColor($event)" (insertTable)="handleInsertTable()"
       (tableInsertWithSize)="handleInsertTable($event)" (shareDocumentClick)="openShareDialog()">
-
     </app-toolbar>
   </div>
-
   <div class="pages-container editor-wrapper">
     <div *ngFor="let page of pages; let i = index" class="document-page-wrapper">
       <div class="page-number">Page {{ i + 1 }}</div>
