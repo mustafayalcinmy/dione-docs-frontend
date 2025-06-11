@@ -72,14 +72,14 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   public QuillLib: typeof Quill | null = null;
   private DeltaConstructor: typeof Delta | null = null;
   private Parchment: any = null;
+  public isGeneratingPdf = false;
+
   private activeTypingFormats: any = {};
   public saveIconState: 'hidden' | 'unsaved' | 'saving' | 'saved' | 'error' = 'hidden';
   private saveTimeout: any;
   private activeEditorInstanceId: string | null = null;
   private lastKnownSelection: { editorId: string, range: QuillRange } | null = null;
   public currentSelectionFormatState: any = {};
-
-  public isGeneratingPdf = false;
 
   private PAGE_CONTENT_TARGET_HEIGHT_PX = 864;
   private overflowCheckScheduled = false;
@@ -96,7 +96,11 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   public saveStatus: string = 'Tüm değişiklikler kaydedildi';
   private autoSaveSubject = new Subject<void>();
   private autoSaveSubscription: Subscription | null = null;
-  private socketSubscription: Subscription | null = null;
+
+
+  public currentUserAccessType: 'owner' | 'viewer' | 'editor' | 'admin' | null = null;
+  public isViewer: boolean = false;
+
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
@@ -105,8 +109,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    public dialog: MatDialog,
-    private socketService: SocketService // SocketService'i inject et
+    public dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -171,6 +174,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
             });
           }
         } catch (error) {
+          console.error("Quill veya modülleri yüklenirken hata oluştu:", error);
         }
       } else {
         this.route.paramMap.subscribe(params => {
@@ -186,21 +190,18 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.editorInstances.forEach((editor) => { });
+    this.editorInstances.forEach((editor) => { /* Gerekirse temizlik işlemleri */ });
     this.editorInstances.clear();
     if (this.autoSaveSubscription) {
       this.autoSaveSubscription.unsubscribe();
     }
-    if (this.socketSubscription) {
-      this.socketSubscription.unsubscribe();
-    }
-    this.socketService.disconnect();
   }
 
   private initializeAutoSave(): void {
     this.autoSaveSubscription = this.autoSaveSubject.pipe(
       debounceTime(500),
-      filter(() => this.isDirty && !!this.currentDocumentId),
+
+      filter(() => this.isDirty && !!this.currentDocumentId && !this.isViewer),
       tap(() => {
         this.saveIconState = 'saving';
         this.changeDetector.detectChanges();
@@ -247,7 +248,6 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!localDeltaConstructor || !this.QuillLib) {
       return null;
     }
-
     let combinedOps: Op[] = [];
     const explicitPageBreakOp: Op = { insert: '\n', attributes: { 'explicitPageBreak': true } };
 
@@ -261,12 +261,14 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     });
-
     return { ops: combinedOps };
   }
 
-
   preventEnterKey(event: KeyboardEvent): void {
+    if (this.isViewer) {
+      event.preventDefault();
+      return;
+    }
     const target = event.target as HTMLElement;
     const currentText = target.innerText || '';
     const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'];
@@ -277,7 +279,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   goBackToMainPage(): void {
-    if (this.isDirty) {
+    if (this.isDirty && !this.isViewer) {
       const userConfirmed = confirm('Kaydedilmemiş değişiklikler var. Yine de sayfadan ayrılmak istediğinize emin misiniz?');
       if (userConfirmed) {
         this.router.navigate(['/main-page']);
@@ -295,6 +297,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId) || !this.QuillLib || !this.DeltaConstructor) {
       return;
     }
+
     const quillSourcesUser: QuillSources = 'user';
     const quillSourcesSilent: QuillSources = 'silent';
 
@@ -304,6 +307,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
         if (container) {
 
           const editor = new this.QuillLib(container, {
+            readOnly: this.isViewer,
             modules: {
               toolbar: false,
               history: { delay: 500, maxStack: 200, userOnly: true },
@@ -321,7 +325,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
               }
             },
-            placeholder: `Sayfa ${this.pages.findIndex(p => p.id === page.id) + 1} içeriği...`,
+            placeholder: this.isViewer ? 'Bu dokümanı sadece görüntüleyebilirsiniz.' : `Sayfa ${this.pages.findIndex(p => p.id === page.id) + 1} içeriği...`,
             theme: 'snow'
           });
 
@@ -330,7 +334,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
               const deltaToSet = new this.DeltaConstructor(page.initialContent.ops);
               editor.setContents(deltaToSet, quillSourcesSilent);
             } catch (e) {
-              console.error("Error setting initial content for page:", page.id, e);
+              console.error("Sayfa içeriği ayarlanırken hata:", e);
             }
           } else {
             editor.setContents(new this.DeltaConstructor([{ insert: '\n' }]), quillSourcesSilent);
@@ -338,62 +342,84 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
           this.editorInstances.set(page.id, editor);
 
-          editor.on('text-change', (delta: Delta, oldDelta: Delta, source: QuillSources) => {
-            if (source === quillSourcesUser) {
-              this.isDirty = true;
-              this.saveIconState = 'unsaved';
-              if (this.saveTimeout) clearTimeout(this.saveTimeout);
 
-              if (this.currentDocumentId) {
-                this.socketService.sendOperation(
-                  delta.ops,
-                  this.currentDocumentVersion
-                );
+          if (this.isViewer) {
+            editor.disable();
+          } else {
+
+            editor.on('text-change', (delta: Delta, oldDelta: Delta, source: QuillSources) => {
+              if (source === quillSourcesUser) {
+                this.isDirty = true;
+                this.saveIconState = 'unsaved';
+                if (this.saveTimeout) clearTimeout(this.saveTimeout);
+
+                if (this.currentDocumentId) {
+                  this.autoSaveSubject.next();
+                }
+
+                this.lastKnownSelection = {
+                  editorId: page.id,
+                  range: editor.getSelection(true) as QuillRange
+                };
+
+                this.updateCurrentSelectionFormatState(editor, this.lastKnownSelection.range);
+                this._scheduleOverflowCheck(page.id, editor);
+                this.scheduleReflowCheck(page.id, editor);
+
+                const currentPageId = page.id;
+                const editorContentLength = editor.getLength();
+                const currentPageIndex = this.pages.findIndex(p => p.id === currentPageId);
+
+                if (editorContentLength <= 1 && currentPageIndex > 0) {
+                  setTimeout(() => {
+                    const previousPage = this.pages[currentPageIndex - 1];
+                    if (previousPage) {
+                      const previousEditor = this.editorInstances.get(previousPage.id);
+                      if (previousEditor && this.QuillLib) {
+                        const prevEditorLength = previousEditor.getLength();
+                        const targetSelectionIndex = prevEditorLength > 0 ? prevEditorLength - 1 : 0;
+
+                        this.activeEditorInstanceId = previousPage.id;
+                        previousEditor.setSelection(targetSelectionIndex, 0, this.QuillLib.sources.USER);
+                        previousEditor.focus();
+                        this.changeDetector.detectChanges();
+                        this.removePage(currentPageId);
+                      } else {
+                        this.removePage(currentPageId);
+                      }
+                    } else {
+                      this.removePage(currentPageId);
+                    }
+                  }, 0);
+                  return;
+                }
               }
+            });
 
-              this.autoSaveSubject.next();
+            editor.on('selection-change', (range: QuillRange | null, oldRange: QuillRange | null, source: QuillSources) => {
+              if (range) {
+                this.activeEditorInstanceId = page.id;
+                if (source === quillSourcesUser) {
+                  this.lastKnownSelection = { editorId: page.id, range };
+                }
+                this.updateCurrentSelectionFormatState(editor, range);
 
-              this.lastKnownSelection = { editorId: page.id, range: editor.getSelection(true) as QuillRange };
-              this.updateCurrentSelectionFormatState(editor, this.lastKnownSelection.range);
-              this._scheduleOverflowCheck(page.id, editor);
-              this.scheduleReflowCheck(page.id, editor);
-
-              const currentPageId = page.id;
-              const editorContentLength = editor.getLength();
-              const currentPageIndex = this.pages.findIndex(p => p.id === currentPageId);
-
-              if (editorContentLength <= 1 && currentPageIndex > 0) {
-                setTimeout(() => {
-                  this.removePageIfEmptyAndFocusPrevious(currentPageId, currentPageIndex);
-                }, 0);
-                return;
-              }
-            }
-          });
-
-          editor.on('selection-change', (range: QuillRange | null, oldRange: QuillRange | null, source: QuillSources) => {
-            if (range) {
-              this.activeEditorInstanceId = page.id;
-              if (source === 'user') {
-                this.lastKnownSelection = { editorId: page.id, range: range };
-              }
-              this.updateCurrentSelectionFormatState(editor, range);
-
-              if (range.length > 0) {
-                this.activeTypingFormats = {};
-              } else {
-                if (Object.keys(this.activeTypingFormats).length > 0) {
-                  for (const key in this.activeTypingFormats) {
-                    editor.format(key, this.activeTypingFormats[key], 'silent');
+                if (range.length > 0) {
+                  this.activeTypingFormats = {};
+                } else {
+                  if (Object.keys(this.activeTypingFormats).length > 0) {
+                    for (const key in this.activeTypingFormats) {
+                      editor.format(key, this.activeTypingFormats[key], 'silent');
+                    }
                   }
                 }
               }
-            }
 
-            if (range && editor.hasFocus()) {
-              this.activeEditorInstanceId = page.id;
-            }
-          });
+              if (range && editor.hasFocus()) {
+                this.activeEditorInstanceId = page.id;
+              }
+            });
+          }
         } else {
           console.warn(`Container element not found for page id: ${page.id}`);
         }
@@ -406,8 +432,10 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
         this.activeEditorInstanceId = firstPageId;
       }
     }
+
     this.changeDetector.detectChanges();
   }
+
 
   handleInsertTable(size?: { rows: number, cols: number }): void {
     const editor = this.getEditorToFormat();
@@ -469,6 +497,9 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   applyFormat(formatKey: string, value: any): void {
+
+    if (this.isViewer) return;
+
     const editorToFormat = this.getEditorToFormat();
     const localQuillLib = this.QuillLib;
 
@@ -723,6 +754,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       this.changeDetector.detectChanges();
     } else if (pageIndex > -1 && this.pages.length === 1 && this.pages[0].id === pageId) {
+      console.log("Cannot remove the last page.");
     }
   }
 
@@ -931,9 +963,16 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  handleAddNewPage(): void { this.addPage(); }
+  handleAddNewPage(): void {
+
+    if (this.isViewer) return;
+    this.addPage();
+  }
 
   handleNew(): void {
+
+    if (this.isViewer) return;
+
     const localQuillLib = this.QuillLib;
     const localDeltaConstructor = this.DeltaConstructor;
 
@@ -968,6 +1007,9 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   handleSave(): void {
+
+    if (this.isViewer) return;
+
     const finalDelta = this.getCombinedDelta();
     if (!finalDelta) {
       alert("Kaydedilecek içerik oluşturulamadı.");
@@ -1032,8 +1074,28 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private async loadDocumentData(docId: string): Promise<void> {
-    this.documentService.getDocument(docId).subscribe({
-      next: async (doc: DocumentPayload) => {
+    this.documentService.getUserDocumentPermission(docId).pipe(
+      tap(permission => {
+
+        this.currentUserAccessType = permission["access_type"] as any;
+        this.isViewer = permission["access_type"] === 'viewer';
+        this.changeDetector.detectChanges();
+      }),
+      switchMap(() => {
+
+        return this.documentService.getDocument(docId);
+      }),
+      catchError(err => {
+        console.error('Yetki veya doküman yükleme hatası:', err);
+
+        alert(`Doküman erişim yetkisi veya veri yüklenirken bir sorun oluştu: ${err.message || 'Bilinmeyen bir hata oluştu.'}`);
+        this.router.navigate(['/main-page']);
+        return of(null);
+      })
+    ).subscribe({
+      next: async (doc: DocumentPayload | null) => {
+        if (!doc) return;
+
         this.title = doc.title;
         this.currentDocumentId = doc.id ?? null;
         this.currentDocumentVersion = doc.version ?? 1;
@@ -1078,15 +1140,18 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
           this.changeDetector.detectChanges();
 
           await new Promise(resolve => setTimeout(resolve, 50));
+
           this.initializeVisiblePageEditors();
 
           if (this.pages.length > 0) {
             this.activeEditorInstanceId = this.pages[0].id;
-            this.editorInstances.get(this.pages[0].id)?.focus();
+            const firstEditor = this.editorInstances.get(this.pages[0].id);
+            if (firstEditor && !this.isViewer) {
+              firstEditor.focus();
+            }
           }
 
-          // Periyodik sayfa taşırma kontrolünü başlat
-          if (!this.currentlyCheckingOverflow) {
+          if (!this.currentlyCheckingOverflow && !this.isViewer) {
             this.currentlyCheckingOverflow = true;
             try {
               for (const page of this.pages) {
@@ -1100,36 +1165,34 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
               }
               const editorToFocus = this.activeEditorInstanceId ? this.editorInstances.get(this.activeEditorInstanceId) : (this.pages.length > 0 ? this.editorInstances.get(this.pages[0].id) : null);
-              editorToFocus?.focus();
+              if (editorToFocus && !this.isViewer) {
+                editorToFocus.focus();
+              }
             } catch (e) {
-              console.error("Error during initial overflow check:", e);
+              console.error("Sayfa taşması kontrolü sırasında hata:", e);
             } finally {
               this.currentlyCheckingOverflow = false;
             }
           }
         } else {
-          // Eğer API'den içerik gelmezse veya boşsa, tek bir boş sayfa oluştur
           if (this.pages.length === 0) {
             this.pages = [{ id: this.generatePageId(), initialContent: { ops: [{ insert: '\n' }] } }];
             this.changeDetector.detectChanges();
             await new Promise(resolve => setTimeout(resolve, 50));
             this.initializeVisiblePageEditors();
-            if (this.pages.length > 0) this.editorInstances.get(this.pages[0].id)?.focus();
+            if (this.pages.length > 0 && !this.isViewer) {
+              this.editorInstances.get(this.pages[0].id)?.focus();
+            }
           }
         }
-
-        // YENİ: DOKÜMAN YÜKLENDİKTEN SONRA WEBSOCKET'E BAĞLAN
-        if (doc.id) {
-          this.connectToRealtimeChannel(doc.id);
-        }
-
       },
       error: (err) => {
-        alert(`Doküman yüklenirken bir sorun oluştu: ${err.message || err}`);
+        alert(`Doküman yüklenirken beklenmedik bir sorun oluştu: ${err.message || err}`);
         this.goBackToMainPage();
       }
     });
   }
+
   handlePrint(): void { if (isPlatformBrowser(this.platformId)) window.print(); }
 
   handleDownload(): void {
@@ -1150,6 +1213,8 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   updateTitle(event: any): void {
+    if (this.isViewer) return;
+
     const newTitle = event.target.innerText.trim();
     if (this.title !== newTitle) {
       this.title = newTitle || 'Adsız Döküman';
@@ -1176,14 +1241,14 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openShareDialog(): void {
-    console.log('DocumentComponent: openShareDialog method called.'); // Kontrol için log
-    if (!this.currentDocumentId) {
-      console.error('DocumentComponent: currentDocumentId is null or undefined. Cannot open share dialog.');
-      alert('Paylaşım için lütfen önce belgeyi kaydedin veya mevcut bir belgeyi açın.');
+    if (this.isViewer) {
+      alert("Dokümanı paylaşma yetkiniz bulunmamaktadır.");
       return;
     }
-    if (!this.title) {
-      console.warn('DocumentComponent: Document title is not set. Using a default title for share dialog.');
+
+    if (!this.currentDocumentId) {
+      alert('Paylaşım için lütfen önce belgeyi kaydedin veya mevcut bir belgeyi açın.');
+      return;
     }
 
     const dialogData: ShareDialogData = {
@@ -1191,73 +1256,12 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       documentTitle: this.title || 'Başlıksız Belge'
     };
 
-    console.log('DocumentComponent: Opening share dialog with data:', dialogData);
     this.dialog.open(ShareDialogComponent, {
       width: '600px',
       maxWidth: '90vw',
       data: dialogData,
       autoFocus: false
     });
-  }
-
-
-  private connectToRealtimeChannel(docId: string): void {
-    this.socketService.disconnect(); // Önceki bağlantıyı temizle
-    this.socketService.connect(docId);
-
-    if (this.socketSubscription) {
-      this.socketSubscription.unsubscribe();
-    }
-
-    this.socketSubscription = this.socketService.incomingOps$.subscribe(
-      (op: OTOperation) => {
-        if (op && op.ops) {
-          const editor = this.getActiveEditor();
-          if (editor) {
-            console.log('Applying remote delta:', op.ops);
-            const delta = new (this.DeltaConstructor as any)(op.ops);
-            editor.updateContents(delta, 'silent');
-          }
-        }
-      }
-    );
-  }
-
-  private getActiveEditor(): Quill | null {
-    if (this.activeEditorInstanceId) {
-      return this.editorInstances.get(this.activeEditorInstanceId) || null;
-    }
-
-    if (this.editorInstances.size > 0) {
-      return this.editorInstances.values().next().value || null;
-    }
-
-    return null;
-  }
-
-
-  private removePageIfEmptyAndFocusPrevious(currentPageId: string, currentPageIndex: number): void {
-    if (currentPageIndex > 0 && this.pages[currentPageIndex - 1]) {
-      const previousPageId = this.pages[currentPageIndex - 1].id;
-      const previousEditorInstance = this.editorInstances.get(previousPageId);
-
-      if (previousEditorInstance && this.QuillLib) {
-        const prevEditorLength = previousEditorInstance.getLength();
-        const targetSelectionIndex = prevEditorLength > 0 ? prevEditorLength - 1 : 0;
-
-        this.activeEditorInstanceId = previousPageId;
-        previousEditorInstance.setSelection(targetSelectionIndex, 0, this.QuillLib.sources.USER);
-        previousEditorInstance.focus();
-
-        this.removePage(currentPageId);
-        this.changeDetector.detectChanges();
-
-      } else {
-        this.removePage(currentPageId);
-      }
-    } else {
-      this.removePage(currentPageId);
-    }
   }
 
   async handleDownloadAsPdf(): Promise<void> {
@@ -1269,10 +1273,6 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.changeDetector.detectChanges();
 
     const doc = new jsPDF('p', 'pt', 'a4');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = doc.internal.pageSize.getHeight();
-
-    // Sayfa elementlerini DOM'dan al
     const pageElements = document.querySelectorAll<HTMLElement>('.document-page-wrapper');
 
     try {

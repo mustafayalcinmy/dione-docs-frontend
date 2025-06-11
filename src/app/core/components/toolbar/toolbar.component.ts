@@ -2,8 +2,7 @@ import { Component, Output, EventEmitter, ViewChild, ElementRef, HostListener, I
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { ShareDialogComponent, ShareDialogData } from '../../components/share-dialog/share-dialog.component'; // Yeni dialog component'i
-
+import { ShareDialogComponent, ShareDialogData } from '../../components/share-dialog/share-dialog.component';
 
 const FONT_SIZES = ['8px', '9px', '10px', '12px', '14px', '16px', '20px', '24px', '32px', '42px', '54px', '68px', '84px', '98px'];
 
@@ -21,15 +20,18 @@ const FONT_STYLES_CONFIG = [
   { name: 'Times New Roman', value: 'times-new-roman, serif' },
   { name: 'Verdana', value: 'verdana, sans-serif' }
 ];
+
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule,
-    ShareDialogComponent],
+  imports: [CommonModule, FormsModule, MatDialogModule, ShareDialogComponent],
   templateUrl: './toolbar.component.html',
   styleUrls: ['./toolbar.component.scss']
 })
 export class ToolbarComponent implements OnChanges {
+  // YENİ: Dışarıdan 'disabled' durumunu almak için Input ekle
+  @Input() disabled: boolean = false;
+
   public fontSizes: string[] = FONT_SIZES;
   public fontStyles: { name: string, value: string }[] = FONT_STYLES_CONFIG;
   @Input() currentSelectionFormat: any = {};
@@ -111,6 +113,7 @@ export class ToolbarComponent implements OnChanges {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
+    // Bu metodda bir değişiklik gerekmiyor
     const target = event.target as Node;
     const containerElement = this.elementRef.nativeElement.querySelector('.font-size-select-wrapper');
     const colorContainer = this.elementRef.nativeElement.querySelector('.color-picker-container');
@@ -126,6 +129,8 @@ export class ToolbarComponent implements OnChanges {
   }
 
   toggleMenu(menu: string): void {
+    // DÜZENLEME: Eğer disabled ise menüyü açma
+    if (this.disabled) return;
     const currentlyOpen = this.menuOpen;
     this.closeAllMenus();
     if (currentlyOpen !== menu) {
@@ -139,6 +144,9 @@ export class ToolbarComponent implements OnChanges {
     this.menuOpen = null;
   }
 
+  // Bütün EventEmitter'lar zaten ana component'te engellendiği için
+  // buradaki fonksiyonlarda bir değişiklik yapmaya gerek yok.
+  // HTML tarafında butonları disable etmek yeterli.
   onNewClick(): void { this.newClick.emit(); this.closeAllMenus(); }
   onSaveClick(): void { this.saveClick.emit(); this.closeAllMenus(); }
   onDownloadClick(): void { this.downloadClick.emit(); this.closeAllMenus(); }
@@ -166,6 +174,7 @@ export class ToolbarComponent implements OnChanges {
   }
 
   handleFontSizeDisplayClick(event: MouseEvent): void {
+    // Bu metodda değişiklik gerekmiyor, HTML'de kontrol edilecek.
     event.stopPropagation();
     if (this.customSizeInputActive) {
       this.isSizeDropdownOpen = !this.isSizeDropdownOpen;
@@ -193,6 +202,7 @@ export class ToolbarComponent implements OnChanges {
   }
 
   toggleSizeDropdownOnly(event: MouseEvent): void {
+    // Bu metodda değişiklik gerekmiyor, HTML'de kontrol edilecek.
     event.stopPropagation();
     this.isSizeDropdownOpen = !this.isSizeDropdownOpen;
     if (this.isSizeDropdownOpen && !this.customSizeInputActive) {
@@ -298,6 +308,7 @@ export class ToolbarComponent implements OnChanges {
   }
 
   toggleColorPicker(): void {
+    if (this.disabled) return;
     this.isColorPickerOpen = !this.isColorPickerOpen;
     this.isTableGridOpen = false;
   }
@@ -308,6 +319,7 @@ export class ToolbarComponent implements OnChanges {
   }
 
   toggleTableGrid(): void {
+    if (this.disabled) return;
     this.isTableGridOpen = !this.isTableGridOpen;
     this.isColorPickerOpen = false;
   }
@@ -322,4 +334,3 @@ export class ToolbarComponent implements OnChanges {
   onLinkClick(): void { this.link.emit(); }
 
 }
-

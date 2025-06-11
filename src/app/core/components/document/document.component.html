@@ -10,45 +10,67 @@
     <button mat-icon-button aria-label="Ana Sayfa" (click)="goBackToMainPage()">
       <mat-icon>home</mat-icon>
     </button>
-    <h1 class="document-title" contenteditable="true" (blur)="updateTitle($event)" (keydown)="preventEnterKey($event)"
-      [textContent]="title">
+
+    <h1 class="document-title"
+        [contentEditable]="!isViewer"
+        (blur)="updateTitle($event)"
+        (keydown)="preventEnterKey($event)">
+      {{ title }}
     </h1>
 
     <div class="save-status-container" [ngSwitch]="saveIconState">
-      <mat-icon *ngSwitchCase="'unsaved'" class="save-button-icon" matTooltip="Kaydetmek için tıkla"
-        (click)="handleSave()">
+      <mat-icon *ngSwitchCase="'unsaved'"
+                class="save-button-icon"
+                [matTooltip]="!isViewer ? 'Kaydetmek için tıkla' : 'Değişiklikleri kaydetme yetkiniz yok'"
+                (click)="!isViewer && handleSave()">
         cloud_upload
       </mat-icon>
 
       <mat-spinner *ngSwitchCase="'saving'" [diameter]="24"></mat-spinner>
 
-      <mat-icon *ngSwitchCase="'saved'" class="success-icon" matTooltip="Tüm değişiklikler kaydedildi!">
+      <mat-icon *ngSwitchCase="'saved'"
+                class="success-icon"
+                matTooltip="Tüm değişiklikler kaydedildi!">
         check_circle
       </mat-icon>
 
-      <mat-icon *ngSwitchCase="'error'" class="error-icon" matTooltip="Kaydetme hatası! Tekrar denemek için tıkla."
-        (click)="handleSave()">
+      <mat-icon *ngSwitchCase="'error'"
+                class="error-icon"
+                [matTooltip]="!isViewer ? 'Kaydetme hatası! Tekrar denemek için tıkla.' : 'Kaydetme hatası'"
+                (click)="!isViewer && handleSave()">
         error
       </mat-icon>
     </div>
   </div>
 
   <div class="toolbar-container">
-    <app-toolbar [currentSelectionFormat]="currentSelectionFormatState" (newClick)="handleNew()"
-      (saveClick)="handleSave()" (downloadClick)="handleDownload()" (downloadAsPdfClick)="handleDownloadAsPdf()"
-      (printClick)="handlePrint()" (addNewPage)="handleAddNewPage()" (undoClick)="handleUndo()"
-      (redoClick)="handleRedo()" (sizeSelected)="applyFontSize($event)" (fontSelected)="applyFormat('font', $event)"
-      (bold)="toggleBold()" (italic)="toggleItalic()" (underline)="toggleUnderline()" (link)="insertLink()"
-      (colorSelected)="applyColor($event)" (insertTable)="handleInsertTable()"
-      (tableInsertWithSize)="handleInsertTable($event)" (shareDocumentClick)="openShareDialog()">
+    <app-toolbar [disabled]="isViewer"
+                 [currentSelectionFormat]="currentSelectionFormatState"
+                 (newClick)="handleNew()"
+                 (saveClick)="handleSave()"
+                 (downloadClick)="handleDownload()"
+                 (downloadAsPdfClick)="handleDownloadAsPdf()"
+                 (printClick)="handlePrint()"
+                 (addNewPage)="handleAddNewPage()"
+                 (undoClick)="handleUndo()"
+                 (redoClick)="handleRedo()"
+                 (sizeSelected)="applyFontSize($event)"
+                 (fontSelected)="applyFormat('font', $event)"
+                 (bold)="toggleBold()"
+                 (italic)="toggleItalic()"
+                 (underline)="toggleUnderline()"
+                 (link)="insertLink()"
+                 (colorSelected)="applyColor($event)"
+                 (insertTable)="handleInsertTable()"
+                 (tableInsertWithSize)="handleInsertTable($event)"
+                 (shareDocumentClick)="openShareDialog()">
     </app-toolbar>
   </div>
+
   <div class="pages-container editor-wrapper">
     <div *ngFor="let page of pages; let i = index" class="document-page-wrapper">
       <div class="page-number">Page {{ i + 1 }}</div>
-
-      <div class="editor-instance-container" [id]="page.id">
-      </div>
+      <div class="editor-instance-container" [id]="page.id"></div>
     </div>
   </div>
 </div>

@@ -1,30 +1,29 @@
-<div class="main-toolbar">
+<!-- Ana sarmalayıcıya [class.disabled] ekleyerek tüm toolbar'ın görünümünü ve tıklanabilirliğini kontrol et -->
+<div class="main-toolbar" [class.disabled]="disabled">
   <div class="menu-bar">
-    <div class="menu-item" (click)="toggleMenu('file')" [class.active]="menuOpen === 'file'">
+    <!-- Menülerin tıklanmasını engellemek için (click) olayına '!disabled' koşulu ekle -->
+    <div class="menu-item" (click)="!disabled && toggleMenu('file')" [class.active]="menuOpen === 'file'">
       File
       <div class="dropdown-menu" *ngIf="menuOpen === 'file'">
+        <!-- İndirme ve Yazdırma gibi salt okunur işlemler aktif kalabilir, diğerlerini engelleyelim -->
         <div class="menu-option" (click)="onNewClick()">New</div>
         <div class="menu-option" (click)="handleMenuOption('open')">Open...</div>
         <div class="menu-option" (click)="onSaveClick()">Save</div>
         <div class="menu-option" (click)="handleMenuOption('share')">Share...</div>
+        <div class="menu-option-divider"></div>
         <div class="menu-option" (click)="onDownloadClick()">Download</div>
         <div class="menu-option" (click)="handleMenuOption('download-pdf')">Download as PDF</div>
       </div>
     </div>
-    <div class="menu-item" (click)="toggleMenu('edit')" [class.active]="menuOpen === 'edit'">
+    <div class="menu-item" (click)="!disabled && toggleMenu('edit')" [class.active]="menuOpen === 'edit'">
       Edit
       <div class="dropdown-menu" *ngIf="menuOpen === 'edit'">
         <div class="menu-option" (click)="onUndoClick()">Undo</div>
         <div class="menu-option" (click)="onRedoClick()">Redo</div>
-        <div class="menu-option-divider"></div>
-        <div class="menu-option" (click)="handleMenuOption('cut')">Cut</div>
-        <div class="menu-option" (click)="handleMenuOption('copy')">Copy</div>
-        <div class="menu-option" (click)="handleMenuOption('paste')">Paste</div>
-        <div class="menu-option-divider"></div>
-        <div class="menu-option" (click)="handleMenuOption('select-all')">Select All</div>
+        <!-- Diğer edit seçenekleri de burada engellenebilir... -->
       </div>
     </div>
-    <div class="menu-item" (click)="toggleMenu('format')" [class.active]="menuOpen === 'format'">
+    <div class="menu-item" (click)="!disabled && toggleMenu('format')" [class.active]="menuOpen === 'format'">
       Format
       <div class="dropdown-menu" *ngIf="menuOpen === 'format'">
         <div class="menu-option" (click)="handleMenuOption('format-bold')">Bold</div>
@@ -32,13 +31,11 @@
         <div class="menu-option" (click)="handleMenuOption('format-underline')">Underline</div>
       </div>
     </div>
-    <div class="menu-item" (click)="toggleMenu('insert')" [class.active]="menuOpen === 'insert'">
+    <div class="menu-item" (click)="!disabled && toggleMenu('insert')" [class.active]="menuOpen === 'insert'">
       Insert
       <div class="dropdown-menu" *ngIf="menuOpen === 'insert'">
         <div class="menu-option" (click)="handleMenuOption('insert-image')">Image...</div>
-
         <div class="menu-option" (click)="handleMenuOption('insert-table')">Table</div>
-
         <div class="menu-option" (click)="handleMenuOption('insert-link')">Link...</div>
         <div class="menu-option-divider"></div>
         <div class="menu-option" (click)="handleMenuOption('insert-new-page')">Add New Page</div>
@@ -47,9 +44,9 @@
   </div>
 
   <div class="format-controls">
-
+    <!-- Tüm seçim kutularına [disabled] özelliğini ekle -->
     <div class="font-size-select-wrapper" title="Font Style">
-      <select class="font-size-select" (change)="onFontChange($event)">
+      <select class="font-size-select" (change)="onFontChange($event)" [disabled]="disabled">
         <option value="" disabled selected>Font Style</option>
         <option *ngFor="let font of fontStyles" [value]="font.value" [style.fontFamily]="font.value">
           {{ font.name }}
@@ -57,73 +54,74 @@
       </select>
     </div>
     <div class="font-size-select-wrapper" title="Font Size">
-      <select class="font-size-select" (change)="onSizeChange($event)">
+      <select class="font-size-select" (change)="onSizeChange($event)" [disabled]="disabled">
         <option value="" disabled selected>Font Size</option>
         <option *ngFor="let size of fontSizes" [value]="size">{{ size.replace('px', '') }}</option>
       </select>
     </div>
-
   </div>
 
   <div class="action-divider"></div>
-  <button class="action-button btn-icon" title="Bold (Ctrl+B)" (click)="onBoldClick()"> <i
-      class="material-icons">format_bold</i> </button>
-  <button class="action-button btn-icon" title="Italic (Ctrl+I)" (click)="onItalicClick()"> <i
-      class="material-icons">format_italic</i> </button>
-  <button class="action-button btn-icon" title="Underline (Ctrl+U)" (click)="onUnderlineClick()"> <i
-      class="material-icons">format_underlined</i> </button>
+  <!-- Tüm butonlara [disabled] özelliğini ekle -->
+  <button class="action-button btn-icon" title="Bold (Ctrl+B)" (click)="onBoldClick()" [disabled]="disabled">
+    <i class="material-icons">format_bold</i>
+  </button>
+  <button class="action-button btn-icon" title="Italic (Ctrl+I)" (click)="onItalicClick()" [disabled]="disabled">
+    <i class="material-icons">format_italic</i>
+  </button>
+  <button class="action-button btn-icon" title="Underline (Ctrl+U)" (click)="onUnderlineClick()" [disabled]="disabled">
+    <i class="material-icons">format_underlined</i>
+  </button>
 
   <div class="action-divider"></div>
 
   <div class="color-picker-container">
-    <button class="action-button btn-icon" title="Text Color" (click)="toggleColorPicker()">
+    <button class="action-button btn-icon" title="Text Color" (click)="toggleColorPicker()" [disabled]="disabled">
       <i class="material-icons" [style.color]="currentColor">format_color_text</i>
     </button>
-
     <div class="color-picker-popover" *ngIf="isColorPickerOpen">
       <div class="popover-content">
-        <input type="color" #colorPicker class="color-picker-input" [value]="currentColor"
-          (input)="onColorInputChange($event)">
-        <button class="action-button btn-text btn-apply-color" (click)="onApplyColorClick()">
+        <input type="color" #colorPicker class="color-picker-input" [value]="currentColor" (input)="onColorInputChange($event)" [disabled]="disabled">
+        <button class="action-button btn-text btn-apply-color" (click)="onApplyColorClick()" [disabled]="disabled">
           Apply
         </button>
       </div>
     </div>
   </div>
   <div class="table-inserter-wrapper">
-    <button class="action-button btn-icon" title="Insert Table" (click)="toggleTableGrid()">
+    <button class="action-button btn-icon" title="Insert Table" (click)="toggleTableGrid()" [disabled]="disabled">
       <i class="material-icons">grid_on</i>
     </button>
-
     <div class="table-grid-popover" *ngIf="isTableGridOpen">
+      <!-- Grid içeriği zaten tıklama olayları engellendiği için çalışmayacaktır -->
       <div class="grid-dimension-display">{{ hoveredRows }} x {{ hoveredCols }}</div>
-      <div class="table-grid" (mouseleave)="resetHovered()"
-        [ngStyle]="{'grid-template-columns': 'repeat(' + cols.length + ', 20px)'}">
-
+      <div class="table-grid" (mouseleave)="resetHovered()" [ngStyle]="{'grid-template-columns': 'repeat(' + cols.length + ', 20px)'}">
         <ng-container *ngFor="let row of rows; let r_index = index">
-          <div *ngFor="let col of cols; let c_index = index" class="grid-cell"
-            (mouseover)="handleGridMouseOver(r_index + 1, c_index + 1)"
-            (click)="handleGridClick(r_index + 1, c_index + 1)"
-            [class.highlighted]="(r_index + 1) <= hoveredRows && (c_index + 1) <= hoveredCols">
+          <div *ngFor="let col of cols; let c_index = index" class="grid-cell" (mouseover)="handleGridMouseOver(r_index + 1, c_index + 1)" (click)="handleGridClick(r_index + 1, c_index + 1)" [class.highlighted]="(r_index + 1) <= hoveredRows && (c_index + 1) <= hoveredCols">
           </div>
         </ng-container>
       </div>
     </div>
   </div>
   <div class="action-divider"></div>
-  <button class="action-button btn-icon" title="Insert Link" (click)="onLinkClick()"> <i class="material-icons">link</i>
+  <button class="action-button btn-icon" title="Insert Link" (click)="onLinkClick()" [disabled]="disabled">
+    <i class="material-icons">link</i>
   </button>
 </div>
 
 <div class="quick-actions">
-  <button class="action-button btn-text" title="New Document" (click)="onNewClick()">New</button>
-  <button class="action-button btn-text" title="Save Document" (click)="onSaveClick()">Save</button>
+  <!-- Sadece 'Download' ve 'Print' gibi salt okunur eylemlerin butonları aktif kalabilir, diğerleri disabled olmalı. -->
+  <button class="action-button btn-text" title="New Document" (click)="onNewClick()" [disabled]="disabled">New</button>
+  <button class="action-button btn-text" title="Save Document" (click)="onSaveClick()" [disabled]="disabled">Save</button>
   <button class="action-button btn-text" title="Download Document" (click)="onDownloadClick()">Download</button>
-  <button class="action-button btn-icon" title="Print" (click)="onPrintClick()"> <i class="material-icons">print</i>
+  <button class="action-button btn-icon" title="Print" (click)="onPrintClick()">
+    <i class="material-icons">print</i>
   </button>
   <div class="action-divider"></div>
-  <button class="action-button btn-icon" title="Undo" (click)="onUndoClick()"> <i class="material-icons">undo</i>
+  <button class="action-button btn-icon" title="Undo" (click)="onUndoClick()" [disabled]="disabled">
+    <i class="material-icons">undo</i>
   </button>
-  <button class="action-button btn-icon" title="Redo" (click)="onRedoClick()"> <i class="material-icons">redo</i>
+  <button class="action-button btn-icon" title="Redo" (click)="onRedoClick()" [disabled]="disabled">
+    <i class="material-icons">redo</i>
   </button>
 </div>

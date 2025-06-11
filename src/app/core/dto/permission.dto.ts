@@ -20,6 +20,10 @@ export interface MessageResponse {
   message: string;
 }
 
+export interface UserDocumentPermissionResponse {
+  access_type: 'viewer' | 'editor' | 'admin';
+}
+
 export interface InvitationDetailResponse {
   invitation_id: string;
   document_id: string;

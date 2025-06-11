@@ -12,7 +12,7 @@ import {
   DocumentListResponseFromAPI,
   CombinedDocumentList
 } from '../dto/document.dto';
-import { PermissionResponseFromAPI, MessageResponse } from '../dto/permission.dto';
+import { PermissionResponseFromAPI, MessageResponse, UserDocumentPermissionResponse } from '../dto/permission.dto';
 import { Op } from 'quill-delta';
 @Injectable({
   providedIn: 'root'
@@ -284,4 +284,20 @@ export class DocumentService {
         })
       );
   }
+
+getUserDocumentPermission(docId: string): Observable<UserDocumentPermissionResponse> {
+  const url = `${this.API_URL}/${docId}/role`;
+
+  return this.http.get<UserDocumentPermissionResponse>(url, {
+    headers: this.getAuthHeaders()
+  }).pipe(
+    catchError(err => {
+      console.error(`getUserDocumentPermission servisinde hata oluştu (doküman: ${docId}):`, err);
+      const errorMsg = err.error?.Error || 'Yetki bilgisi alınırken bir hata oluştu.';
+      return throwError(() => new Error(errorMsg));
+    })
+  );
+}
+
+
 }
