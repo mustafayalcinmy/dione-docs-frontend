@@ -19,6 +19,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ShareDialogComponent, ShareDialogData } from '../share-dialog/share-dialog.component';
 import { SocketService, OTOperation } from '../../services/socket.service';
+import { FormsModule } from '@angular/forms'; 
+
+import { ChatService } from '../../services/chat.service';
+import { ChatMessage } from '../../dto/chat-message.dto';
+
 
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -68,6 +73,7 @@ const QUILL_FONT_STYLES_WHITELIST = [
     MatButtonModule,
     MatProgressSpinnerModule,
     MatDialogModule,
+    FormsModule,
     MatTooltipModule
   ],
   templateUrl: './document.component.html',
@@ -113,6 +119,13 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
+  public isChatVisible = false;
+  public chatMessages: ChatMessage[] = [];
+  public newChatMessageContent = '';
+  public isLoadingChat = false;
+  private chatSubscription: Subscription | null = null;
+  public currentUserId: string | null = null;
+
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
@@ -120,18 +133,19 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     private documentService: DocumentService,
     private authService: AuthService,
     private route: ActivatedRoute,
-    private socketService: SocketService, // SocketService'i inject et
+    private socketService: SocketService,
+    private chatService: ChatService,
     private router: Router,
     public dialog: MatDialog
   ) { }
 
-  ngOnInit(): void {
+ ngOnInit(): void {
+    this.currentUserId = this.authService.getCurrentUserId();
     if (this.pages.length === 0 && !this.route.snapshot.paramMap.get('id')) {
       this.pages.push({ id: this.generatePageId(), initialContent: { ops: [{ insert: '\n' }] } });
     }
     this.initializeAutoSave();
   }
-
   @HostListener('window:beforeunload', ['$event'])
   unloadNotification($event: any): void {
     if (this.isDirty) {
@@ -203,7 +217,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.editorInstances.forEach((editor) => { /* Gerekirse temizlik işlemleri */ });
+    this.editorInstances.forEach((editor) => {  });
     this.editorInstances.clear();
     if (this.autoSaveSubscription) {
       this.autoSaveSubscription.unsubscribe();
@@ -212,6 +226,51 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       this.socketSubscription.unsubscribe();
     }
     this.socketService.disconnect();
+    this.chatService.disconnect(); 
+    if (this.chatSubscription) {
+      this.chatSubscription.unsubscribe();
+    }
+  }
+
+  public toggleChat(): void {
+    this.isChatVisible = !this.isChatVisible;
+    if (this.isChatVisible && this.currentDocumentId && this.chatMessages.length === 0) {
+      this.loadChatHistoryAndConnect(this.currentDocumentId);
+    }
+  }
+
+  private loadChatHistoryAndConnect(docId: string): void {
+    this.isLoadingChat = true;
+    this.chatService.getChatHistory(docId).subscribe((history: ChatMessage[]) => {
+      this.chatMessages = history.sort((a: { created_at: string | number | Date; }, b: { created_at: string | number | Date; }) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      this.isLoadingChat = false;
+      this.scrollToChatBottom();
+    });
+
+    this.chatService.connect(docId);
+    if (this.chatSubscription) {
+      this.chatSubscription.unsubscribe();
+    }
+    this.chatSubscription = this.chatService.messages$.subscribe((message: ChatMessage) => {
+      this.chatMessages.push(message);
+      this.scrollToChatBottom();
+    });
+  }
+
+  public sendChatMessage(): void {
+    if (this.newChatMessageContent.trim()) {
+      this.chatService.sendMessage(this.newChatMessageContent);
+      this.newChatMessageContent = '';
+    }
+  }
+
+  private scrollToChatBottom(): void {
+    setTimeout(() => {
+      const chatContainer = document.querySelector('.chat-messages');
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    }, 0);
   }
 
   private initializeAutoSave(): void {
@@ -1207,7 +1266,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
             }
           }
         }
-        
+
         // WEBSOCKET: Doküman yüklendikten sonra kanala bağlan
         if (doc.id) {
           this.connectToRealtimeChannel(doc.id);
@@ -1290,7 +1349,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       autoFocus: false
     });
   }
-  
+
   // WEBSOCKET: Gelen değişiklikleri dinlemek ve bağlantıyı yönetmek için metodlar
   private connectToRealtimeChannel(docId: string): void {
     this.socketService.disconnect(); // Önceki bağlantıyı temizle
@@ -1312,6 +1371,10 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     );
+
+    if (this.isChatVisible) {
+      this.loadChatHistoryAndConnect(docId);
+    }
   }
 
   private getActiveEditor(): Quill | null {
@@ -1498,9 +1561,6 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     alert(`Document "${data.title}" imported successfully. Remember to save it.`);
   }
 
-  /**
-   * Gathers document data, packages it into a .d1 file, and triggers a download.
-   */
   handleExport(): void {
     const finalDelta = this.getCombinedDelta();
     if (!finalDelta) {

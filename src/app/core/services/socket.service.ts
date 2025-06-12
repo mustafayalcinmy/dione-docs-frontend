@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 export interface OTOperation {
   version: number;
   clientId: string;
-  ops: any[]; 
+  ops: any[];
 }
 
 @Injectable({
@@ -22,7 +22,7 @@ export class SocketService {
 
   constructor(private authService: AuthService) { }
 
-public connect(docId: string): void {
+  public connect(docId: string): void {
     if (this.socket$ && !this.socket$.closed) {
       console.log('Socket already connected.');
       return;
@@ -34,8 +34,8 @@ public connect(docId: string): void {
       return;
     }
 
-    const url = `${this.WS_BASE_URL}/${docId}?token=${token}`;
-    console.log(`Connecting to WebSocket at: ${url}`); 
+    const url = `ws://localhost:8080/api/v1/ws/documents/${docId}?token=${token}`;
+    console.log(`Connecting to WebSocket at: ${url}`);
 
     this.socket$ = webSocket(url);
 

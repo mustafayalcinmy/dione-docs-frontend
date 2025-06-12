@@ -12,63 +12,105 @@
     <button mat-icon-button aria-label="Ana Sayfa" (click)="goBackToMainPage()">
       <mat-icon>home</mat-icon>
     </button>
+    <button mat-icon-button (click)="toggleChat()" matTooltip="Sohbeti Aç/Kapat">
+      <mat-icon>chat_bubble_outline</mat-icon>
+    </button>
 
-    <h1 class="document-title"
-        [contentEditable]="!isViewer"
-        (blur)="updateTitle($event)"
-        (keydown)="preventEnterKey($event)">
+    <h1 class="document-title" [contentEditable]="!isViewer" (blur)="updateTitle($event)"
+      (keydown)="preventEnterKey($event)">
       {{ title }}
     </h1>
 
     <div class="save-status-container" [ngSwitch]="saveIconState">
-      <mat-icon *ngSwitchCase="'unsaved'"
-                class="save-button-icon"
-                [matTooltip]="!isViewer ? 'Kaydetmek için tıkla' : 'Değişiklikleri kaydetme yetkiniz yok'"
-                (click)="!isViewer && handleSave()">
+      <mat-icon *ngSwitchCase="'unsaved'" class="save-button-icon"
+        [matTooltip]="!isViewer ? 'Kaydetmek için tıkla' : 'Değişiklikleri kaydetme yetkiniz yok'"
+        (click)="!isViewer && handleSave()">
         cloud_upload
       </mat-icon>
 
       <mat-spinner *ngSwitchCase="'saving'" [diameter]="24"></mat-spinner>
 
-      <mat-icon *ngSwitchCase="'saved'"
-                class="success-icon"
-                matTooltip="Tüm değişiklikler kaydedildi!">
+      <mat-icon *ngSwitchCase="'saved'" class="success-icon" matTooltip="Tüm değişiklikler kaydedildi!">
         check_circle
       </mat-icon>
 
-      <mat-icon *ngSwitchCase="'error'"
-                class="error-icon"
-                [matTooltip]="!isViewer ? 'Kaydetme hatası! Tekrar denemek için tıkla.' : 'Kaydetme hatası'"
-                (click)="!isViewer && handleSave()">
+      <mat-icon *ngSwitchCase="'error'" class="error-icon"
+        [matTooltip]="!isViewer ? 'Kaydetme hatası! Tekrar denemek için tıkla.' : 'Kaydetme hatası'"
+        (click)="!isViewer && handleSave()">
         error
       </mat-icon>
     </div>
   </div>
 
+
+  <div class="chat-sidebar" [class.visible]="isChatVisible">
+    <div class="chat-header">
+      <h3>Sohbet</h3>
+      <button mat-icon-button (click)="toggleChat()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="chat-messages" #chatMessagesContainer>
+      <div *ngIf="isLoadingChat" class="loading-chat">
+        <mat-spinner [diameter]="40"></mat-spinner>
+        <p>Mesajlar yükleniyor...</p>
+      </div>
+
+      <ng-container *ngIf="!isLoadingChat">
+        <div *ngIf="chatMessages.length === 0" class="no-messages">
+          <mat-icon>chat</mat-icon>
+          <p>Henüz mesaj yok. İlk mesajı siz gönderin!</p>
+        </div>
+
+        <div *ngFor="let msg of chatMessages" class="chat-message-wrapper"
+          [class.own-message]="msg.user.ID === currentUserId">
+          <div class="message-bubble">
+            <div class="message-sender" *ngIf="msg.user.ID !== currentUserId">
+              {{ msg.user.Username }}
+            </div>
+            <div class="message-content">{{ msg.content }}</div>
+            <div class="message-timestamp">{{ msg.created_at | date:'shortTime' }}</div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" placeholder="Bir mesaj yazın..." [(ngModel)]="newChatMessageContent"
+        (keyup.enter)="sendChatMessage()" [disabled]="isLoadingChat">
+      <button mat-icon-button color="primary" (click)="sendChatMessage()" [disabled]="!newChatMessageContent.trim()">
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
+  </div>
+
+
   <div class="toolbar-container">
-    <app-toolbar [disabled]="isViewer"
-                 [currentSelectionFormat]="currentSelectionFormatState"
-                 (newClick)="handleNew()"
-                 (saveClick)="handleSave()"
-                 (downloadClick)="handleDownload()"
-                 (downloadAsPdfClick)="handleDownloadAsPdf()"
-                 (exportClick)="handleExport()"
-                 (importClick)="triggerImport()"
-                 (printClick)="handlePrint()"
-                 (addNewPage)="handleAddNewPage()"
-                 (undoClick)="handleUndo()"
-                 (redoClick)="handleRedo()"
-                 (sizeSelected)="applyFontSize($event)"
-                 (fontSelected)="applyFormat('font', $event)"
-                 (bold)="toggleBold()"
-                 (italic)="toggleItalic()"
-                 (underline)="toggleUnderline()"
-                 (link)="insertLink()"
-                 (colorSelected)="applyColor($event)"
-                 (insertTable)="handleInsertTable()"
-                 (tableInsertWithSize)="handleInsertTable($event)"
-                 (shareDocumentClick)="openShareDialog()">
-    </app-toolbar>
+    <app-toolbar
+      [disabled]="isViewer"
+      [currentSelectionFormat]="currentSelectionFormatState"
+      (newClick)="handleNew()"
+      (saveClick)="handleSave()"
+      (downloadClick)="handleDownload()"
+      (downloadAsPdfClick)="handleDownloadAsPdf()"
+      (exportClick)="handleExport()"
+      (importClick)="triggerImport()"
+      (printClick)="handlePrint()"
+      (addNewPage)="handleAddNewPage()"
+      (undoClick)="handleUndo()"
+      (redoClick)="handleRedo()"
+      (sizeSelected)="applyFontSize($event)"
+      (fontSelected)="applyFormat('font', $event)"
+      (bold)="toggleBold()"
+      (italic)="toggleItalic()"
+      (underline)="toggleUnderline()"
+      (link)="insertLink()"
+      (colorSelected)="applyColor($event)"
+      (insertTable)="handleInsertTable()"
+      (tableInsertWithSize)="handleInsertTable($event)"
+      (shareDocumentClick)="openShareDialog()">
+</app-toolbar>
   </div>
 
   <div class="pages-container editor-wrapper">
