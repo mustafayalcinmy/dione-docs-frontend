@@ -31,9 +31,8 @@
 
     <div class="section">
       <h2 class="section-title">Erişimi Olan Kişiler</h2>
-      <div *ngIf="isLoading" class="feedback-text">Yükleniyor...</div>
       
-      <div *ngIf="!isLoading && sharedWith.length === 0" class="feedback-text">
+      <div *ngIf="sharedWith.length === 0" class="feedback-text">
         Bu belge henüz kimseyle paylaşılmamış.
       </div>
 
