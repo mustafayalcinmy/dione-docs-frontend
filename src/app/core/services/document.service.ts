@@ -280,19 +280,30 @@ export class DocumentService {
       );
   }
 
-getUserDocumentPermission(docId: string): Observable<UserDocumentPermissionResponse> {
-  const url = `${this.API_URL}/${docId}/role`;
+  getUserDocumentPermission(docId: string): Observable<UserDocumentPermissionResponse> {
+    const url = `${this.API_URL}/${docId}/role`;
 
-  return this.http.get<UserDocumentPermissionResponse>(url, {
-    headers: this.getAuthHeaders()
-  }).pipe(
-    catchError(err => {
-      console.error(`getUserDocumentPermission servisinde hata oluştu (doküman: ${docId}):`, err);
-      const errorMsg = err.error?.Error || 'Yetki bilgisi alınırken bir hata oluştu.';
-      return throwError(() => new Error(errorMsg));
-    })
-  );
-}
+    return this.http.get<UserDocumentPermissionResponse>(url, {
+      headers: this.getAuthHeaders()
+    }).pipe(
+      catchError(err => {
+        console.error(`getUserDocumentPermission servisinde hata oluştu (doküman: ${docId}):`, err);
+        const errorMsg = err.error?.Error || 'Yetki bilgisi alınırken bir hata oluştu.';
+        return throwError(() => new Error(errorMsg));
+      })
+    );
+  }
+
+  importFromDocx(file: File): Observable<DocumentPayload> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+    });
+
+    return this.http.post<DocumentPayload>(`${this.API_BASE_URL}/import/docx`, formData, { headers });
+  }
 
 
 }

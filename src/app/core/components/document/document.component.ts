@@ -19,7 +19,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ShareDialogComponent, ShareDialogData } from '../share-dialog/share-dialog.component';
 import { SocketService, OTOperation } from '../../services/socket.service';
-import { FormsModule } from '@angular/forms'; 
+import { FormsModule } from '@angular/forms';
 
 import { ChatService } from '../../services/chat.service';
 import { ChatMessage } from '../../dto/chat-message.dto';
@@ -118,6 +118,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   public isViewer: boolean = false;
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('docxImporter') docxImporter!: ElementRef<HTMLInputElement>;
 
   public isChatVisible = false;
   public chatMessages: ChatMessage[] = [];
@@ -139,7 +140,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     public dialog: MatDialog
   ) { }
 
- ngOnInit(): void {
+  ngOnInit(): void {
     this.currentUserId = this.authService.getCurrentUserId();
     if (this.pages.length === 0 && !this.route.snapshot.paramMap.get('id')) {
       this.pages.push({ id: this.generatePageId(), initialContent: { ops: [{ insert: '\n' }] } });
@@ -217,7 +218,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.editorInstances.forEach((editor) => {  });
+    this.editorInstances.forEach((editor) => { });
     this.editorInstances.clear();
     if (this.autoSaveSubscription) {
       this.autoSaveSubscription.unsubscribe();
@@ -226,7 +227,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       this.socketSubscription.unsubscribe();
     }
     this.socketService.disconnect();
-    this.chatService.disconnect(); 
+    this.chatService.disconnect();
     if (this.chatSubscription) {
       this.chatSubscription.unsubscribe();
     }
@@ -1447,6 +1448,17 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  triggerDocxImport(): void {
+    if (this.isViewer) {
+      alert("You don't have permission to import documents.");
+      return;
+    }
+    const confirmation = confirm('Importing a DOCX document will replace all current content. This action cannot be undone. Are you sure you want to continue?');
+    if (confirmation) {
+      this.docxImporter.nativeElement.click();
+    }
+  }
+
   /**
    * Handles the file selection from the import dialog.
    * Reads, parses, and validates the .d1 file, then loads it into the editor.
@@ -1474,7 +1486,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
         if (data.fileType !== 'd1-document' || !data.content || !data.title) {
           throw new Error('Invalid or corrupted .d1 file format.');
         }
-        
+
         // Load the validated data into the document
         await this.loadDocumentFromImport(data);
 
@@ -1494,6 +1506,35 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     reader.readAsText(file);
   }
 
+ async onDocxFileSelected(event: Event): Promise<void> {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      return;
+    }
+    const file = target.files[0];
+        
+    try {
+      const newDocument = await this.documentService.importFromDocx(file).toPromise();
+      
+      if (newDocument && newDocument.id) {
+        alert(`Document "${file.name}" imported successfully! You are being redirected to the new document.`);
+        
+        this.router.navigate(['/document', newDocument.id]).then(() => {
+          window.location.reload();
+        });
+      } else {
+        throw new Error("Failed to import document: received an invalid response from the server.");
+      }
+
+    } catch (error) {
+      console.error("Error importing DOCX file:", error);
+      alert(`Failed to import DOCX document: ${error instanceof Error ? error.message : 'An unknown error occurred.'}`);
+    } finally {
+      target.value = '';
+    }
+  }
+
+
   /**
    * Resets the current document state and populates it with data from an imported file.
    * @param data The validated data from a .d1 file.
@@ -1507,11 +1548,11 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentDocumentOwnerId = null; // Will be set on save
     this.isDirty = true;
     this.saveIconState = 'unsaved';
-    
+
     this.title = data.title;
     this.currentDocumentDescription = data.description || '';
     this.updateTitleInDOM();
-    
+
     // Clear existing editors and pages
     this.editorInstances.forEach(editor => editor.disable());
     this.editorInstances.clear();
@@ -1547,7 +1588,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.changeDetector.detectChanges();
     await new Promise(resolve => setTimeout(resolve, 50)); // Wait for DOM update
-    
+
     this.initializeVisiblePageEditors();
 
     if (this.pages.length > 0) {
@@ -1557,7 +1598,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
         firstEditor.focus();
       }
     }
-    
+
     alert(`Document "${data.title}" imported successfully. Remember to save it.`);
   }
 
@@ -1575,7 +1616,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
       description: this.currentDocumentDescription,
       content: finalDelta
     };
-    
+
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

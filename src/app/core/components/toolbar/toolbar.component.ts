@@ -71,6 +71,7 @@ export class ToolbarComponent implements OnChanges {
   @Output() downloadAsPdfClick = new EventEmitter<void>();
   @Output() exportClick = new EventEmitter<void>();
   @Output() importClick = new EventEmitter<void>();
+  @Output() importDocxClick = new EventEmitter<void>();
 
   constructor(private elementRef: ElementRef, public dialog: MatDialog) { }
 
@@ -163,6 +164,7 @@ export class ToolbarComponent implements OnChanges {
       case 'download-pdf': this.downloadAsPdfClick.emit(); break;
       case 'export-d1': this.onExportClick(); break;
       case 'import-d1': this.onImportClick(); break;
+      case 'import-docx': this.importDocxClick.emit(); break;
       case 'share':
         console.log('ToolbarComponent: Share menu option clicked, emitting shareDocumentClick event.');
         this.shareDocumentClick.emit();

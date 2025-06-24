@@ -5,6 +5,7 @@
       <div class="dropdown-menu" *ngIf="menuOpen === 'file'">
         <div class="menu-option" (click)="onNewClick()">New</div>
         <div class="menu-option" (click)="handleMenuOption('open')">Open...</div>
+        <div class="menu-option" (click)="handleMenuOption('import-docx')">Import from .docx...</div>
         <div class="menu-option" (click)="handleMenuOption('import-d1')">Import from .d1...</div>
         <div class="menu-option-divider"></div>
         <div class="menu-option" (click)="onSaveClick()">Save</div>
@@ -19,7 +20,7 @@
       <div class="dropdown-menu" *ngIf="menuOpen === 'edit'">
         <div class="menu-option" (click)="onUndoClick()">Undo</div>
         <div class="menu-option" (click)="onRedoClick()">Redo</div>
-        </div>
+      </div>
     </div>
     <div class="menu-item" (click)="!disabled && toggleMenu('format')" [class.active]="menuOpen === 'format'">
       Format
@@ -77,7 +78,8 @@
     </button>
     <div class="color-picker-popover" *ngIf="isColorPickerOpen">
       <div class="popover-content">
-        <input type="color" #colorPicker class="color-picker-input" [value]="currentColor" (input)="onColorInputChange($event)" [disabled]="disabled">
+        <input type="color" #colorPicker class="color-picker-input" [value]="currentColor"
+          (input)="onColorInputChange($event)" [disabled]="disabled">
         <button class="action-button btn-text btn-apply-color" (click)="onApplyColorClick()" [disabled]="disabled">
           Apply
         </button>
@@ -90,9 +92,13 @@
     </button>
     <div class="table-grid-popover" *ngIf="isTableGridOpen">
       <div class="grid-dimension-display">{{ hoveredRows }} x {{ hoveredCols }}</div>
-      <div class="table-grid" (mouseleave)="resetHovered()" [ngStyle]="{'grid-template-columns': 'repeat(' + cols.length + ', 20px)'}">
+      <div class="table-grid" (mouseleave)="resetHovered()"
+        [ngStyle]="{'grid-template-columns': 'repeat(' + cols.length + ', 20px)'}">
         <ng-container *ngFor="let row of rows; let r_index = index">
-          <div *ngFor="let col of cols; let c_index = index" class="grid-cell" (mouseover)="handleGridMouseOver(r_index + 1, c_index + 1)" (click)="handleGridClick(r_index + 1, c_index + 1)" [class.highlighted]="(r_index + 1) <= hoveredRows && (c_index + 1) <= hoveredCols">
+          <div *ngFor="let col of cols; let c_index = index" class="grid-cell"
+            (mouseover)="handleGridMouseOver(r_index + 1, c_index + 1)"
+            (click)="handleGridClick(r_index + 1, c_index + 1)"
+            [class.highlighted]="(r_index + 1) <= hoveredRows && (c_index + 1) <= hoveredCols">
           </div>
         </ng-container>
       </div>
@@ -106,7 +112,8 @@
 
 <div class="quick-actions">
   <button class="action-button btn-text" title="New Document" (click)="onNewClick()" [disabled]="disabled">New</button>
-  <button class="action-button btn-text" title="Save Document" (click)="onSaveClick()" [disabled]="disabled">Save</button>
+  <button class="action-button btn-text" title="Save Document" (click)="onSaveClick()"
+    [disabled]="disabled">Save</button>
   <button class="action-button btn-text" title="Download Document" (click)="onDownloadClick()">Download</button>
   <button class="action-button btn-icon" title="Print" (click)="onPrintClick()">
     <i class="material-icons">print</i>

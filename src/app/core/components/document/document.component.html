@@ -1,4 +1,5 @@
 <input type="file" #fileInput hidden (change)="handleFileImport($event)" accept=".d1" />
+<input type="file" #docxImporter hidden (change)="onDocxFileSelected($event)" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
 
 <div *ngIf="isGeneratingPdf" class="pdf-generation-overlay">
   <div class="spinner-container">
@@ -87,7 +88,7 @@
 
 
   <div class="toolbar-container">
-    <app-toolbar
+   <app-toolbar
       [disabled]="isViewer"
       [currentSelectionFormat]="currentSelectionFormatState"
       (newClick)="handleNew()"
@@ -96,7 +97,7 @@
       (downloadAsPdfClick)="handleDownloadAsPdf()"
       (exportClick)="handleExport()"
       (importClick)="triggerImport()"
-      (printClick)="handlePrint()"
+      (importDocxClick)="triggerDocxImport()"  (printClick)="handlePrint()"
       (addNewPage)="handleAddNewPage()"
       (undoClick)="handleUndo()"
       (redoClick)="handleRedo()"
@@ -110,7 +111,7 @@
       (insertTable)="handleInsertTable()"
       (tableInsertWithSize)="handleInsertTable($event)"
       (shareDocumentClick)="openShareDialog()">
-</app-toolbar>
+    </app-toolbar>
   </div>
 
   <div class="pages-container editor-wrapper">
