@@ -1,6 +1,6 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
-import { AppComponent } from './app/app.component'; // Standalone AppComponent import ediliyor
+import { AppComponent } from './app/app.component';
 
-bootstrapApplication(AppComponent, appConfig) // Standalone AppComponent ve config ile başlatılıyor
+bootstrapApplication(AppComponent, appConfig)
   .catch((err) => console.error(err));

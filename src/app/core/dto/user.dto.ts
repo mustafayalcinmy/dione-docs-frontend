@@ -3,13 +3,11 @@ export interface LoginRequest {
   password: string;
 }
 
-// Interface for registration request payload
 export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
 }
-// core/dto/user.dto.ts dosyanıza ekleyin
 
 export interface BackendUserResponse {
   userId: string;
@@ -17,14 +15,12 @@ export interface BackendUserResponse {
   fullName: string;
 }
 
-// Mevcut User interface'iniz (değişiklik yok)
 export interface User {
   id: string;
   email: string;
   fullName: string;
 }
 
-// Interface for auth response
 export interface AuthResponse {
   token: string;
   userId: string;
@@ -33,7 +29,6 @@ export interface AuthResponse {
   expiresIn?: number;
 }
 
-// Interface for user data
 export interface User {
   id: string;
   email: string;

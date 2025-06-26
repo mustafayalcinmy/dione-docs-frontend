@@ -431,7 +431,6 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
                 if (this.saveTimeout) clearTimeout(this.saveTimeout);
 
                 if (this.currentDocumentId) {
-                  // WEBSOCKET: Kullanıcı tarafından yapılan değişiklikleri gönder
                   this.socketService.sendOperation(
                     delta.ops,
                     this.currentDocumentVersion
@@ -1268,7 +1267,6 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
 
-        // WEBSOCKET: Doküman yüklendikten sonra kanala bağlan
         if (doc.id) {
           this.connectToRealtimeChannel(doc.id);
         }
@@ -1351,9 +1349,8 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // WEBSOCKET: Gelen değişiklikleri dinlemek ve bağlantıyı yönetmek için metodlar
   private connectToRealtimeChannel(docId: string): void {
-    this.socketService.disconnect(); // Önceki bağlantıyı temizle
+    this.socketService.disconnect();
     this.socketService.connect(docId);
 
     if (this.socketSubscription) {
@@ -1436,12 +1433,8 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Triggers the hidden file input element to open the file dialog.
-   * Confirms with the user before proceeding as it's a destructive action.
-   */
   triggerImport(): void {
-    if (this.isViewer) return; // Viewers can't import
+    if (this.isViewer) return;
     const confirmation = confirm('Importing a new document will replace all current content. This action cannot be undone. Are you sure you want to continue?');
     if (confirmation) {
       this.fileInput.nativeElement.click();
@@ -1459,10 +1452,6 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Handles the file selection from the import dialog.
-   * Reads, parses, and validates the .d1 file, then loads it into the editor.
-   */
   async handleFileImport(event: Event): Promise<void> {
     const target = event.target as HTMLInputElement;
     if (!target.files || target.files.length === 0) {
@@ -1472,7 +1461,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     const file = target.files[0];
     if (!file.name.toLowerCase().endsWith('.d1')) {
       alert('Invalid file type. Please select a .d1 file.');
-      target.value = ''; // Reset file input
+      target.value = '';
       return;
     }
 
@@ -1482,19 +1471,16 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
         const text = e.target?.result as string;
         const data: DocumentExport = JSON.parse(text);
 
-        // Validate the imported file
         if (data.fileType !== 'd1-document' || !data.content || !data.title) {
           throw new Error('Invalid or corrupted .d1 file format.');
         }
 
-        // Load the validated data into the document
         await this.loadDocumentFromImport(data);
 
       } catch (error) {
         console.error("Error processing imported file:", error);
         alert(`Failed to import document: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
-        // Reset the file input so the user can import the same file again if needed
         target.value = '';
       }
     };
@@ -1535,17 +1521,12 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
 
-  /**
-   * Resets the current document state and populates it with data from an imported file.
-   * @param data The validated data from a .d1 file.
-   */
   private async loadDocumentFromImport(data: DocumentExport): Promise<void> {
     if (!this.QuillLib || !this.DeltaConstructor) return;
 
-    // Reset document state to treat it as a new, unsaved document
     this.currentDocumentId = null;
     this.currentDocumentVersion = 1;
-    this.currentDocumentOwnerId = null; // Will be set on save
+    this.currentDocumentOwnerId = null;
     this.isDirty = true;
     this.saveIconState = 'unsaved';
 
@@ -1553,14 +1534,12 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentDocumentDescription = data.description || '';
     this.updateTitleInDOM();
 
-    // Clear existing editors and pages
     this.editorInstances.forEach(editor => editor.disable());
     this.editorInstances.clear();
     this.pages = [];
     this.activeEditorInstanceId = null;
     this.changeDetector.detectChanges();
 
-    // Process content delta and split into pages
     if (data.content && data.content.ops) {
       let currentOpsForPage: Op[] = [];
       for (const op of data.content.ops) {
@@ -1587,7 +1566,7 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.changeDetector.detectChanges();
-    await new Promise(resolve => setTimeout(resolve, 50)); // Wait for DOM update
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     this.initializeVisiblePageEditors();
 
@@ -1621,7 +1600,6 @@ export class DocumentComponent implements OnInit, AfterViewInit, OnDestroy {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    // Sanitize title for filename
     const fileName = (this.title || 'Untitled Document').replace(/[^a-z0-9]/gi, '_').toLowerCase();
     a.download = `${fileName}.d1`;
     document.body.appendChild(a);

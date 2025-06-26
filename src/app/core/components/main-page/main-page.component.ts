@@ -10,14 +10,13 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatRippleModule } from '@angular/material/core';
 import { DocumentService } from '../../services/document.service';
-import { DocumentPayload, CombinedDocumentList } from '../../dto/document.dto';
+import { DocumentPayload } from '../../dto/document.dto';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { InvitationDetailResponse } from '../../dto/permission.dto';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ShareDialogComponent, ShareDialogData } from '../share-dialog/share-dialog.component';
 import { AuthService } from '../../services/auth.service';
-import { User } from '../../dto/user.dto';
 
 @Component({
   selector: 'app-main-page',
@@ -78,7 +77,6 @@ export class MainPageComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // setTimeout ile bir tick bekleyerek ViewChild'ların tam yüklenmesini sağla
     setTimeout(() => {
       this.setupTableFeatures();
     });
@@ -93,7 +91,6 @@ export class MainPageComponent implements OnInit, AfterViewInit {
       this.paginator.pageSize = 10;
       this.paginator.pageIndex = 0;
       
-      // Paginator değişikliklerini dinle
       this.paginator.page.subscribe(() => {
         console.log('Paginator page changed:', this.paginator.pageSize, this.paginator.pageIndex);
       });
@@ -109,12 +106,9 @@ export class MainPageComponent implements OnInit, AfterViewInit {
   }
 
   private setupPaginatorAfterDataLoad(): void {
-    // Veri yüklendikten sonra paginator'u yeniden kur
     if (this.paginator && this.dataSource) {
-      // Mevcut bağlantıyı kaldır
       this.dataSource.paginator = null;
       
-      // Kısa bir gecikme sonrası yeniden bağla
       setTimeout(() => {
         if (this.paginator) {
           this.dataSource.paginator = this.paginator;
@@ -154,10 +148,8 @@ export class MainPageComponent implements OnInit, AfterViewInit {
         this.recentDocuments = (docData?.recent || [])
           .filter(doc => doc.id && !pendingDocumentIds.has(doc.id));
         
-        // Veriyi ata
         this.dataSource.data = this.allUserDocuments;
         
-        // Paginator'u yeniden bağla ve ayarla
         this.setupPaginatorAfterDataLoad();
 
         this.isLoading = false;
@@ -208,7 +200,6 @@ export class MainPageComponent implements OnInit, AfterViewInit {
 
   toggleFavorite(doc: DocumentPayload) {
     (doc as any).favorite = !(doc as any).favorite;
-    // Veriyi güncelle ve paginator ayarlarını koru
     this.dataSource.data = [...this.allUserDocuments];
   }
 

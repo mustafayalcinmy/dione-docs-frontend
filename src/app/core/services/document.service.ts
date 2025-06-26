@@ -1,4 +1,3 @@
-// Path: dione-docs-frontend/src/app/core/services/document.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
@@ -35,31 +34,26 @@ export class DocumentService {
   }
 
   private mapResponseToPayload(response: DocumentResponseFromAPI): DocumentPayload {
-    let parsedContent: QuillDelta = { ops: [{ insert: '\n' }] }; // Hata durumunda veya boş içerikte varsayılan
+    let parsedContent: QuillDelta = { ops: [{ insert: '\n' }] };
 
     if (response.content) {
       try {
         let decodedJsonString: string;
         if (typeof window !== 'undefined' && typeof window.atob === 'function') {
-          // Tarayıcı ortamı için UTF-8 çözümleyici
           const binaryString = window.atob(response.content);
           const bytes = Uint8Array.from(binaryString, char => char.charCodeAt(0));
           decodedJsonString = new TextDecoder('utf-8').decode(bytes);
         } else {
-          // Node.js ortamı için zaten UTF-8 destekli
           decodedJsonString = Buffer.from(response.content, 'base64').toString('utf-8');
         }
 
         if (typeof decodedJsonString === 'string' && decodedJsonString.trim() !== "") {
-          const temp = JSON.parse(decodedJsonString); // SADECE BİR KEZ PARSE ET
-          const parsedData = JSON.parse(temp); // SADECE BİR KEZ PARSE ET
+          const temp = JSON.parse(decodedJsonString);
+          const parsedData = JSON.parse(temp);
 
           if (parsedData && typeof parsedData === 'object' && Array.isArray(parsedData.ops)) {
-            // Durum 1: Gelen veri zaten doğru QuillDelta formatında: { ops: [...] }
             parsedContent = parsedData as QuillDelta;
           } else if (parsedData && Array.isArray(parsedData)) {
-            // Durum 2: Gelen veri bir operasyon dizisi: [{insert:'...'}, ...]
-            // Bu senin "obje aslında bu şekilde geliyor db'den" tanımına uyuyor.
             parsedContent = { ops: parsedData as Op[] };
           } else {
             console.warn('mapResponseToPayload - Parse edilen veri QuillDelta formatında değil veya bir ops dizisi değil:', parsedData);
@@ -69,20 +63,17 @@ export class DocumentService {
         }
       } catch (e) {
         console.error('mapResponseToPayload - Doküman içeriği (base64 decode veya JSON.parse) hatası:', e, 'Ham (base64) içerik:', response.content);
-        // Hata durumunda parsedContent varsayılan değerini koruyacak ({ ops: [{ insert: '\n' }] })
       }
     } else {
       console.warn('mapResponseToPayload - API yanıtında "content" alanı bulunmuyor veya null.');
     }
 
-    // Temel alanların varlığını kontrol et ve varsayılan değerler ata (gerekirse)
     if (!response.id || typeof response.title === 'undefined' || !response.owner_id) {
       console.error('mapResponseToPayload - API yanıtında zorunlu alanlar eksik:', response);
-      // Burada hata fırlatabilir veya kısmi bir payload döndürebilirsin. Şimdilik logluyoruz.
     }
 
     return {
-      id: response.id ?? `fallback-id-${Date.now()}`, // ID yoksa geçici bir ID ata
+      id: response.id ?? `fallback-id-${Date.now()}`,
       title: response.title ?? 'Adsız Doküman',
       description: response.description,
       owner_id: response.owner_id,
@@ -91,27 +82,17 @@ export class DocumentService {
       status: response.status,
       created_at: response.created_at,
       updated_at: response.updated_at,
-      content: parsedContent // Güvenli parsedContent
+      content: parsedContent
     };
   }
 
-
-
-  // createDocument, getDocument, updateDocument, getUserDocuments metodları
-  // mapResponseToPayload'u kullandığı için bu değişiklikten otomatik olarak faydalanacaktır.
-  // Bu metodlarda ekstra bir değişiklik gerekmez.
 
   createDocument(title: string, description: string, contentDelta: QuillDelta, isPublic: boolean): Observable<DocumentPayload> {
     const payload = {
       title: title,
       description: description,
       is_public: isPublic,
-      content: JSON.stringify(contentDelta) // Backend'e giderken base64 kodlama YAPILMAZ, JSON string olarak gider.
-      // Backend, json.RawMessage veya []byte olarak alır.
-      // Eğer []byte ise, jsonb'ye yazılırken db driver'ı base64 encode ETMEMELİDİR.
-      // EĞER backend `[]byte` alıp bunu base64 OLARAK BEKLİYORSA, o zaman frontend'de encode gerekir.
-      // Ama "illegal base64 data" hatası OKURKEN olduğuna göre, backend YAZARKEN base64 yazmıyor,
-      // OKURKEN []byte'ı base64 OLARAK GÖNDERİYOR.
+      content: JSON.stringify(contentDelta)
     };
     console.log('createDocument payload gönderiliyor:', payload);
     return this.http.post<DocumentResponseFromAPI>(this.API_URL, payload, { headers: this.getAuthHeaders() })
@@ -143,7 +124,7 @@ export class DocumentService {
     isPublic: boolean | undefined,
     status: string | undefined
   ): Observable<DocumentPayload> {
-    const payload: any = { // Partial<UpdateDocumentServicePayload> daha iyi olurdu
+    const payload: any = {
       content: JSON.stringify(contentDelta)
     };
     if (title !== undefined) payload.title = title;
@@ -167,8 +148,8 @@ export class DocumentService {
     return this.http.get<DocumentListResponseFromAPI>(`${this.API_URL}/user`, { headers: this.getAuthHeaders() })
       .pipe(
         map((response: DocumentListResponseFromAPI): CombinedDocumentList => {
-          const ownedDocs = response.owned.map(doc => this.mapResponseToPayload(doc)); // Her doküman için decode işlemi yapılacak
-          const sharedDocs = response.shared.map(doc => this.mapResponseToPayload(doc)); // Her doküman için decode işlemi yapılacak
+          const ownedDocs = response.owned.map(doc => this.mapResponseToPayload(doc));
+          const sharedDocs = response.shared.map(doc => this.mapResponseToPayload(doc));
           const allDocs = [...ownedDocs, ...sharedDocs];
 
           const sortedByLastUpdate = [...allDocs].sort((a, b) =>
@@ -225,16 +206,11 @@ export class DocumentService {
   }
 
   updatePermission(permissionId: string, newAccessType: 'viewer' | 'editor'): Observable<MessageResponse> {
-    // **ÖNEMLİ NOT:** Bu metodun çalışması için backend'de
-    // `PUT /api/v1/permissions/:permissionId` gibi bir endpoint'e ve ilgili handler'a ihtiyacınız var.
-    // Bu endpoint, `{ "access_type": "new_type" }` şeklinde bir body almalıdır.
-    // Mevcut backend router'ınızda bu endpoint henüz tanımlı değil.
     console.warn(`updatePermission çağrıldı, ancak backend'de PUT ${this.API_BASE_URL}/permissions/${permissionId} endpoint'i tanımlı olmalıdır.`);
     return this.http.put<MessageResponse>(`${this.API_BASE_URL}/permissions/${permissionId}`, { access_type: newAccessType }, { headers: this.getAuthHeaders() })
       .pipe(
         catchError(err => {
           console.error('updatePermission servisinde HTTP hatası:', err);
-          // Kullanıcıya daha anlamlı bir hata mesajı gösterilebilir.
           return throwError(() => new Error(`İzin güncellenemedi. Backend endpoint'i (${this.API_BASE_URL}/permissions/${permissionId}) kontrol edin.`));
         })
       );
@@ -250,7 +226,7 @@ export class DocumentService {
       );
   }
 
-  getPendingInvitations(): Observable<any[]> { // DTO'yu backend yanıtına göre güncelleyin (InvitationDetailResponse gibi)
+  getPendingInvitations(): Observable<any[]> {
     return this.http.get<any[]>(`${this.API_BASE_URL}/invitations/pending`, { headers: this.getAuthHeaders() })
       .pipe(
         catchError(err => {
@@ -282,7 +258,6 @@ export class DocumentService {
 
   getUserDocumentPermission(docId: string): Observable<UserDocumentPermissionResponse> {
     const url = `${this.API_URL}/${docId}/role`;
-
     return this.http.get<UserDocumentPermissionResponse>(url, {
       headers: this.getAuthHeaders()
     }).pipe(
@@ -297,7 +272,6 @@ export class DocumentService {
   importFromDocx(file: File): Observable<DocumentPayload> {
     const formData = new FormData();
     formData.append('file', file);
-
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
     });

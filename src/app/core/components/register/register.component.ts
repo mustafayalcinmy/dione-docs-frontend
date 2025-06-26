@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { CommonModule } from '@angular/common'; // CommonModule import edildi
-import { FormsModule } from '@angular/forms'; // FormsModule import edildi
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { RegisterRequest } from '../../dto/user.dto';
 
 @Component({
   selector: 'app-register',
-  standalone: true, // standalone eklendi
-  imports: [CommonModule, FormsModule], // Gerekli modüller eklendi
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })
@@ -16,6 +16,7 @@ export class RegisterComponent {
   user_register: RegisterRequest = { username: '', email: '', password: '' };
   confirmPassword: string = '';
   acceptTerms: boolean = false;
+  errorMessage: string | null = null;
 
   constructor(
     private router: Router,
@@ -23,10 +24,9 @@ export class RegisterComponent {
   ) {}
 
   isFormValid(): boolean {
-    // username -> fullName olarak değiştirildi (DTO'ya göre)
     return this.user_register.username.trim() !== '' &&
            this.isValidEmail() &&
-           this.user_register.password.length >= 8 && // Daha güçlü parola kontrolü eklenebilir
+           this.isPasswordStrong() &&
            this.user_register.password === this.confirmPassword &&
            this.acceptTerms;
   }
@@ -36,29 +36,47 @@ export class RegisterComponent {
     return emailPattern.test(this.user_register.email);
   }
 
+  isPasswordStrong(): boolean {
+    const password = this.user_register.password;
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    return password.length >= 8 && hasNumber && hasSpecialChar;
+  }
+  
   register() {
-    console.log('Registration attempt with:', this.user_register.email);
-    if (this.isFormValid()) {
-      // username DTO'da fullName olmalı, backend bunu bekliyorsa DTO güncellenmeli
-      // veya RegisterRequest içindeki alan adı backend'e göre ayarlanmalı.
-      // Şimdilik username kullandığını varsayıyorum. Backend fullName bekliyorsa:
-      // const registerData: RegisterRequest = { fullName: this.user_register.username, ... };
-      this.authService.register(this.user_register).subscribe({ // Modern subscribe syntax
-        next: (response) => {
-          console.log('Register successful!', response);
-          // Başarılı kayıt sonrası ana sayfaya yönlendir
-          this.router.navigate(['/main-page']);
-        },
-        error: (error) => {
-          console.error('Register failed:', error);
-           // Hata mesajını kullanıcıya gösterebilirsiniz
-        }
-      });
-      // Başarısız olsa bile login'e yönlendirme kaldırıldı. Sadece başarılı olunca yönlendirilmeli.
-    } else {
-      console.error('Please fill out all required fields correctly');
-      // Kullanıcıya hangi alanın hatalı olduğu bilgisi verilebilir.
+    this.errorMessage = null
+
+    if (!this.user_register.username.trim() || !this.user_register.email.trim() || !this.user_register.password) {
+      this.errorMessage = 'Lütfen tüm zorunlu alanları doldurun.';
+      return;
     }
+    if (!this.isValidEmail()) {
+      this.errorMessage = 'Lütfen geçerli bir e-posta adresi girin.';
+      return;
+    }
+    if (!this.isPasswordStrong()) {
+        this.errorMessage = 'Şifre en az 8 karakter olmalı, sayı ve özel karakter içermelidir.';
+        return;
+    }
+    if (this.user_register.password !== this.confirmPassword) {
+      this.errorMessage = 'Girdiğiniz şifreler uyuşmuyor.';
+      return;
+    }
+    if (!this.acceptTerms) {
+      this.errorMessage = 'Devam etmek için kullanım koşullarını kabul etmelisiniz.';
+      return;
+    }
+
+    this.authService.register(this.user_register).subscribe({
+      next: (response) => {
+        console.log('Register successful!', response);
+        this.router.navigate(['/main-page']);
+      },
+      error: (error) => {
+        console.error('Register failed:', error);
+        this.errorMessage = 'Kayıt sırasında bir hata oluştu. Lütfen bilgilerinizi kontrol edin veya daha sonra tekrar deneyin.';
+      }
+    });
   }
 
   goToLogin() {
@@ -66,6 +84,6 @@ export class RegisterComponent {
   }
 
   goToWelcome() {
-    this.router.navigate(['']); // Welcome sayfası ana dizinde ('')
+    this.router.navigate(['']);
   }
 }

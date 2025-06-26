@@ -5,13 +5,13 @@ export enum PermissionStatus {
 }
 
 export interface PermissionResponseFromAPI {
-  id: string; // Permission ID
+  id: string;
   document_id: string;
   user_id: string;
   user_email: string;
-  access_type: 'viewer' | 'editor' | 'admin'; // 'admin' de eklendi, backend'den gelebilir
+  access_type: 'viewer' | 'editor' | 'admin';
   status: PermissionStatus;
-  shared_by?: string; // Daveti gönderenin e-postası (backend'den gelirse)
+  shared_by?: string;
   created_at: string;
   updated_at: string;
 }

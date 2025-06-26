@@ -199,13 +199,10 @@
     gap: 8px;
   }
   .main-toolbar.disabled {
-  // Bütün toolbar'a tıklandığında hiçbir işlem olmasın
   pointer-events: none;
-  // Toolbar'ı soluklaştırarak pasif olduğunu belli et
   opacity: 0.6;
-  user-select: none; // Metin seçilmesini engelle
+  user-select: none;
 
-  // Ancak download ve print gibi izin verilen butonlar tekrar tıklanabilir olsun
   .action-button[title="Download Document"],
   .action-button[title="Print"] {
     pointer-events: auto;

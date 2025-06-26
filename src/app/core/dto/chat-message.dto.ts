@@ -1,6 +1,4 @@
 
-import { Op } from 'quill-delta';
-
 export interface ChatMessage {
   id: string;
   document_id: string;

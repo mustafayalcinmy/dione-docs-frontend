@@ -1,32 +1,35 @@
-import { Component, OnInit } from '@angular/core'; // OnInit import edildi
-import { Router, RouterModule } from '@angular/router'; // RouterModule import edildi
+import { Component, OnInit } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { CommonModule } from '@angular/common'; // CommonModule import edildi
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-welcome-page',
-  standalone: true, // standalone eklendi
-  imports: [RouterModule, CommonModule], // Gerekli modüller eklendi
+  standalone: true,
+  imports: [RouterModule, CommonModule],
   templateUrl: './welcome-page.component.html',
   styleUrls: ['./welcome-page.component.scss']
 })
-export class WelcomePageComponent implements OnInit { // OnInit implement edildi
+export class WelcomePageComponent implements OnInit {
   constructor(
     private router: Router,
     private authService: AuthService
   ) {}
 
+  
   ngOnInit() {
-    // Auth check logic is good
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/main-page']);
     }
   }
 
+
   goToLogin() {
-    this.router.navigate(['/login']); // Rota düzeltildi
+    this.router.navigate(['/login']);
   }
+
+
   goToRegister() {
-    this.router.navigate(['/register']); // Rota düzeltildi
+    this.router.navigate(['/register']);
   }
 }

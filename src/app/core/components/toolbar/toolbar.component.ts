@@ -2,7 +2,7 @@ import { Component, Output, EventEmitter, ViewChild, ElementRef, HostListener, I
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { ShareDialogComponent, ShareDialogData } from '../../components/share-dialog/share-dialog.component';
+import { ShareDialogComponent } from '../../components/share-dialog/share-dialog.component';
 
 const FONT_SIZES = ['8px', '9px', '10px', '12px', '14px', '16px', '20px', '24px', '32px', '42px', '54px', '68px', '84px', '98px'];
 
